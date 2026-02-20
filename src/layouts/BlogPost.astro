@@ -17,8 +17,28 @@ const formatted = date.toLocaleDateString('en-US', {
 });
 ---
 
-<Base title={`${title} — Phil Fugate`} description={description}>
+<Base title={`${title} — Phil Fugate`} description={description} ogType="article" publishedTime={date.toISOString()} tags={tags}>
   <article class="post">
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": title,
+      "description": description,
+      "datePublished": date.toISOString(),
+      "author": {
+        "@type": "Person",
+        "name": "Phil Fugate",
+        "url": "https://philfugate.dev"
+      },
+      "publisher": {
+        "@type": "Person",
+        "name": "Phil Fugate"
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": Astro.url.href
+      }
+    })} />
     <header class="post-header">
       <time datetime={date.toISOString()}>{formatted}</time>
       <h1>{title}</h1>

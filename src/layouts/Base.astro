@@ -2,10 +2,21 @@
 interface Props {
   title: string;
   description?: string;
+  ogType?: string;
+  publishedTime?: string;
+  tags?: string[];
 }
 
-const { title, description = 'Phil Fugate — Engineering leader, builder, writer.' } = Astro.props;
+const {
+  title,
+  description = 'Phil Fugate — Engineering leader at AWS. Writing about AI-augmented development and building real products.',
+  ogType = 'website',
+  publishedTime,
+  tags = [],
+} = Astro.props;
 const currentPath = Astro.url.pathname;
+const canonicalUrl = new URL(currentPath, Astro.site).href;
+const ogImage = new URL('/og-default.png', Astro.site).href;
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -21,16 +32,57 @@ const navLinks = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Phil Fugate" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {publishedTime && <meta property="article:author" content="Phil Fugate" />}
+    {tags.map(tag => <meta property="article:tag" content={tag} />)}
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Feeds & Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="application/rss+xml" title="Phil Fugate" href="/rss.xml" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Phil Fugate",
+      "url": "https://philfugate.dev",
+      "author": {
+        "@type": "Person",
+        "name": "Phil Fugate",
+        "url": "https://philfugate.dev",
+        "jobTitle": "Engineering Leader",
+        "worksFor": { "@type": "Organization", "name": "Amazon Web Services" },
+        "sameAs": [
+          "https://linkedin.com/in/philip-fugate",
+          "https://github.com/pfugate"
+        ]
+      }
+    })} />
+
     <title>{title}</title>
   </head>
   <body>
