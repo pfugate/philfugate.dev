@@ -1,6 +1,10 @@
 {
   "name": "philfugate-dev",
   "compatibility_date": "2026-02-20",
+  "routes": [
+    { "pattern": "philfugate.dev", "custom_domain": true },
+    { "pattern": "www.philfugate.dev", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
