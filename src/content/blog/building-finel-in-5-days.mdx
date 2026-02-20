@@ -81,7 +81,7 @@ Cross-service debugging is still mostly on you. Claude is great within one servi
 
 CSS is painful. Claude writes CSS fine but it can't see what it looks like. So you get into this loop where you describe what you want, Claude writes it, you check the browser, it's not right, you describe the fix, Claude writes it, check browser, still not right. You get there eventually but it's the most tedious part of any session.
 
-Domain-specific stuff needs constant hand-holding. Claude does not know that a company's fiscal year Q4 might end in September. It doesn't know that the SEC has like 47 different XBRL tags for what is essentially "revenue." Every time I work on the financial data pipeline, I have to front-load a bunch of domain context or I get code that looks perfect but handles the data wrong.
+Domain-specific stuff needs constant hand-holding. Claude does not know that a company's fiscal year Q4 might end in September. It doesn't know that the SEC has like 47 different XBRL tags for what is essentially "revenue" — something my partner spent 5 years building a classification model to normalize. Every time I work on the financial data pipeline, I have to front-load a bunch of domain context or I get code that looks perfect but handles the data wrong.
 
 Big refactors are sketchy. 3-4 files, no problem. 20 files? Things start falling apart. Stale imports, missed references, changes that conflict with other changes from earlier in the same session. For anything big, I break it into chunks across separate sessions.
 
@@ -91,9 +91,23 @@ The context switching between sessions will melt your brain. When you're this pr
 
 And honestly — it makes you lazy if you're not careful. When Claude is writing most of the code, it's really easy to just skim the output and approve it. I've caught myself doing this and then finding bugs days later that were obvious in retrospect. You have to actually read the code. Treat it like a PR review, not a rubber stamp. I'm still working on being disciplined about this.
 
+## This is not vibe coding
+
+I want to be really clear about something because I think there's a misconception about what AI-assisted development actually looks like in practice.
+
+I'm not sitting on the couch half-watching Netflix while Claude writes my app. That's vibe coding. That's how you get a demo that falls apart the second a real user touches it.
+
+What I'm actually doing is PM'ing, tech leading, and QA'ing a team of 4 highly productive junior engineers who happen to live inside my terminal. I'm writing requirements. I'm reviewing every pull request. I'm making architecture decisions. I'm catching the stuff they miss. I'm deciding what gets built and in what order. I'm saying "no, that's not how we handle auth in this codebase, go look at how the existing middleware does it." I'm running the feature in my browser and filing bugs against their work.
+
+It's management. It's just really fast management of really fast engineers who never get tired and never have opinions about the sprint planning.
+
+The 20 years of experience aren't optional here. They're the whole point. If I didn't know what good architecture looks like, if I couldn't spot a subtle bug in a code review, if I didn't understand the domain well enough to catch when the AI gets the business logic wrong — the output would be garbage. Fast garbage, but garbage.
+
+The skill isn't writing prompts. The skill is everything you already know about building software, applied to a new workflow where you're directing instead of typing.
+
 ## The actual takeaway
 
-None of these lessons are complicated. Write tools that give the AI access to your stuff. Make it plan before it codes. Keep sessions focused. Write things down. Use fresh eyes for review. Stay engaged.
+None of these lessons are complicated. Write tools that give the AI access to your stuff. Make it plan before it codes. Keep sessions focused. Write things down. Use fresh eyes for review. Stay engaged. Remember that you're the tech lead, not a passenger.
 
 The hard part isn't knowing this — it's actually doing it consistently. Every time I skip one of these steps because I'm in a hurry, the quality drops. Every time I follow them, I'm shocked at how much I can get done in an evening.
 
