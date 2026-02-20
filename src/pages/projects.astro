@@ -1,0 +1,87 @@
+---
+import Base from '../layouts/Base.astro';
+
+const projects = [
+  {
+    name: 'FinEL Analytica',
+    description: 'Financial analytics platform that normalizes SEC filing data across companies. Cross-company comparison, screening, and peer benchmarking — the tools Bloomberg sells for $25K/year, built for everyone else.',
+    tags: ['TypeScript', 'Rust', 'AWS', 'React'],
+    url: 'https://finelanalytica.com',
+  },
+];
+---
+
+<Base title="Projects — Phil Fugate" description="Things I've built.">
+  <section>
+    <h1>Projects</h1>
+    <div class="project-grid">
+      {projects.map(project => (
+        <div class="project-card">
+          <div class="card-header">
+            <h2>
+              {project.url
+                ? <a href={project.url} target="_blank" rel="noopener">{project.name}</a>
+                : project.name
+              }
+            </h2>
+          </div>
+          <p class="card-desc">{project.description}</p>
+          <div class="card-tags">
+            {project.tags.map(tag => <span class="tag">{tag}</span>)}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .project-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .project-card {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-elevated);
+    transition: border-color 0.15s;
+  }
+
+  .project-card:hover {
+    border-color: var(--text-faint);
+  }
+
+  .card-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .card-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+  }
+
+  .card-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+  }
+</style>

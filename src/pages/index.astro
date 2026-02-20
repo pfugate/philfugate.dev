@@ -1,0 +1,201 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+---
+
+<Base title="Phil Fugate — Engineer, Builder, Writer">
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <p class="greeting">Hey, I'm</p>
+        <h1>Phil Fugate</h1>
+        <p class="tagline">Engineering leader at <strong>AWS</strong>. 20+ years building software.<br />Writing about AI-augmented development and shipping real products.</p>
+        <div class="hero-links">
+          <a href="/about" class="btn">About me</a>
+          <a href="/blog" class="btn btn-ghost">Read the blog</a>
+        </div>
+      </div>
+      <img src="/phil.png" alt="Phil Fugate" class="hero-photo" width="140" height="140" />
+    </div>
+  </section>
+
+  {posts.length > 0 && (
+    <section class="recent">
+      <h2>Recent posts</h2>
+      <ul class="post-list">
+        {posts.map(post => (
+          <li>
+            <a href={`/blog/${post.id}`} class="post-link">
+              <span class="post-title">{post.data.title}</span>
+              <span class="post-date">
+                {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <a href="/blog" class="see-all">All posts &rarr;</a>
+    </section>
+  )}
+</Base>
+
+<style>
+  .hero {
+    padding: 2rem 0 3rem;
+  }
+
+  .hero-content {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .hero-text {
+    flex: 1;
+  }
+
+  .hero-photo {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 0.5rem;
+  }
+
+  .greeting {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+
+  .tagline {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 520px;
+  }
+
+  .hero-links {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    background: var(--accent-dim);
+    color: #fff;
+  }
+
+  .btn:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--text-faint);
+  }
+
+  .recent {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .recent h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .post-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .post-list li {
+    margin: 0;
+  }
+
+  .post-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.65rem 0.75rem;
+    margin: 0 -0.75rem;
+    border-radius: 8px;
+    transition: background 0.15s;
+    color: var(--text);
+    gap: 1rem;
+  }
+
+  .post-link:hover {
+    background: var(--bg-elevated);
+    color: #fff;
+  }
+
+  .post-title {
+    font-weight: 500;
+  }
+
+  .post-date {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .see-all {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .see-all:hover {
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .hero-content {
+      flex-direction: column-reverse;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+    .hero-photo {
+      width: 100px;
+      height: 100px;
+    }
+    .hero h1 { font-size: 2.25rem; }
+    .tagline { font-size: 1rem; }
+  }
+</style>

@@ -1,0 +1,113 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<Base title="Blog — Phil Fugate" description="Writing about AI-augmented development, engineering leadership, and building products.">
+  <section>
+    <h1>Blog</h1>
+    <p class="intro">
+      Thoughts on AI-augmented development, engineering leadership, and building real products.
+    </p>
+
+    {posts.length === 0 ? (
+      <p class="empty">No posts yet. Check back soon.</p>
+    ) : (
+      <ul class="post-list">
+        {posts.map(post => (
+          <li>
+            <a href={`/blog/${post.id}`} class="post-link">
+              <div class="post-info">
+                <span class="post-title">{post.data.title}</span>
+                <span class="post-desc">{post.data.description}</span>
+              </div>
+              <time datetime={post.data.date.toISOString()}>
+                {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </time>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</Base>
+
+<style>
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .intro {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .empty {
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  .post-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .post-list li {
+    margin: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .post-list li:last-child { border-bottom: none; }
+
+  .post-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem 0.75rem;
+    margin: 0 -0.75rem;
+    border-radius: 8px;
+    transition: background 0.15s;
+    color: var(--text);
+    gap: 1.5rem;
+  }
+
+  .post-link:hover {
+    background: var(--bg-elevated);
+  }
+
+  .post-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .post-title {
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .post-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  time {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+    padding-top: 0.15rem;
+  }
+
+  @media (max-width: 640px) {
+    .post-link {
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+  }
+</style>

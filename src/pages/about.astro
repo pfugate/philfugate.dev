@@ -1,0 +1,115 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="About — Phil Fugate" description="20+ years of engineering, from writing C in college to leading teams at AWS.">
+  <article class="about">
+    <div class="about-header">
+      <img src="/phil.png" alt="Phil Fugate" class="about-photo" width="180" height="180" />
+      <h1>About</h1>
+    </div>
+
+    <p>
+      I'm Phil Fugate — an engineering leader at <strong>AWS</strong> based in Denver, Colorado.
+      I've been writing code professionally for over 20 years and managing engineering teams for the
+      last several. Currently I'm building and leading a team of software development engineers at AWS.
+    </p>
+
+    <p>
+      Outside of work, I'm building <a href="/projects">FinEL</a> — a financial analytics platform
+      that normalizes SEC filing data to enable cross-company financial comparison. Think Bloomberg
+      Terminal, but for the rest of us.
+    </p>
+
+    <h2>What I write about</h2>
+
+    <p>
+      This site is where I share what I've learned about using AI to dramatically accelerate
+      software development. Not theory — I'm writing from the perspective of someone who has shipped
+      real infrastructure, real CI/CD pipelines, and real products with AI as a daily collaborator.
+    </p>
+
+    <p>
+      After 20 years of building software the traditional way, the last couple of years have changed
+      everything about how I work. I want to help other experienced engineers make the same leap.
+    </p>
+
+    <h2>Background</h2>
+
+    <ul class="timeline">
+      <li>
+        <span class="year">Now</span>
+        <span class="detail">Engineering leader at <strong>AWS</strong>, Denver</span>
+      </li>
+      <li>
+        <span class="year">Side</span>
+        <span class="detail">Building <strong>FinEL Analytica</strong> — financial data platform</span>
+      </li>
+      <li>
+        <span class="year">20+ yrs</span>
+        <span class="detail">Full-stack engineering across startups and enterprise</span>
+      </li>
+    </ul>
+
+    <h2>Get in touch</h2>
+
+    <p>
+      Find me on <a href="https://linkedin.com/in/philip-fugate" target="_blank" rel="noopener">LinkedIn</a>
+      or <a href="https://github.com/pfugate" target="_blank" rel="noopener">GitHub</a>.
+    </p>
+  </article>
+</Base>
+
+<style>
+  .about-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-photo {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+  }
+
+  .about h1 {
+    font-size: 2rem;
+  }
+
+  .about h2 {
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .timeline {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+
+  .timeline li {
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
+  }
+
+  .timeline li:last-child { border-bottom: none; }
+
+  .year {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    min-width: 60px;
+    white-space: nowrap;
+  }
+
+  .detail {
+    color: var(--text-muted);
+  }
+</style>

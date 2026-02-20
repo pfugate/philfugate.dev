@@ -1,0 +1,62 @@
+---
+title: "20 Years of Programming — The Last 2 Changed Everything"
+description: "I've been writing code since I was in college. Nothing in those 20 years prepared me for what AI did to my workflow."
+date: 2026-02-03
+tags: ["ai", "productivity", "career"]
+---
+
+I wrote my first real program in C sometime around 2004. It was terrible. I've been writing code pretty much every day since then — through the jQuery dark ages, the Node.js gold rush, a brief Scala phase I don't like to talk about, and eventually into Rust and TypeScript where I live now. I've shipped software at startups where I was the entire engineering team and at companies where getting a PR merged required three approvals and a blood oath.
+
+I say all this not to flex but to establish something: I have a lot of reps. I know what "normal" productivity looks like for me. I have a baseline.
+
+That baseline got completely blown apart in 2024.
+
+## What it used to be like
+
+You know the drill. You need to set up a new service. You spend half a day scaffolding the project, another half fighting IAM permissions, a day writing the actual logic, two days on the CI/CD pipeline because YAML is a crime against humanity, and then a day fixing the thing that broke because your CloudFormation template had a circular dependency that only manifests on the third deploy.
+
+That's a week. For one service. And you've done this enough times that you're *fast* at it. Imagine how long it takes someone who hasn't.
+
+Or context switching. I jump between TypeScript, Rust, Python, CDK, SAM templates, and raw SQL on any given day. Every switch used to cost me 20-30 minutes of mental reloading. "Wait, how does Rust do error handling again? Right, `?` operator, `Result` type, okay..." That tax adds up to hours per week just re-orienting.
+
+## Then I actually started using AI
+
+Not the way most people talk about it. Not "I asked ChatGPT to write me a function." I mean I started treating AI as a genuine collaborator on real production code. Claude sitting in my terminal, looking at my actual codebase, helping me build actual infrastructure.
+
+The difference is hard to overstate.
+
+I'm building a side project called [FinEL](https://finelanalytica.com) — a financial analytics platform. Auth service in Rust, API gateway, data pipelines, Stripe billing, React frontend, SEC filing parser, the whole thing. The kind of project that would normally need 3-4 engineers working full-time for a year.
+
+I'm building it solo. Evenings and weekends. And it's in production.
+
+I'm not saying that to brag. I'm saying it because two years ago that would have been physically impossible for one person with a full-time job and a life. The math would not math. Now it does.
+
+## What's actually different (specifically)
+
+The bootstrap cost went to near zero. I can go from "I need a Rust Lambda behind API Gateway with DynamoDB" to a deployed, working service with error handling and CI/CD in an afternoon. Not a demo — a real service that handles real traffic. I did this with my auth service and it's been rock solid.
+
+Context switching stopped being expensive. The AI carries the context for me. I can be deep in a TypeScript React component, switch to debugging a Rust Lambda, then jump into a CDK stack, and I don't lose those 30 minutes each time reloading the mental model. The AI already has it.
+
+I stopped writing boilerplate entirely. Tests, YAML configs, migration scripts, CloudFormation templates — the stuff that used to eat entire days is now a conversation. "Write integration tests for these 24 auth endpoints." Done. And honestly? The tests it writes are more thorough than what I would've written because I would've gotten lazy by test number 15.
+
+Debugging became a two-person job. Instead of staring at a stack trace alone at 11pm trying to figure out which of five services is actually broken, I have a partner who can reason about the error with me. This is especially good for the cross-service stuff where the bug could be anywhere.
+
+## What it doesn't do
+
+It doesn't replace experience. I actually think experience matters *more* now, not less. The AI is fast but it has no taste. It doesn't know which solution is going to be a maintenance nightmare in six months. It doesn't understand that your PM actually wants something different from what they asked for. It will happily over-engineer a beautiful abstraction that nobody needs if you let it.
+
+I spend way more time now on architecture decisions and code review than I do on writing code from scratch. My job shifted from "author" to "editor-in-chief." And honestly, that's a way better use of 20 years of experience than remembering how to configure webpack.
+
+## If you haven't tried this yet
+
+I know there are a lot of senior engineers who are skeptical. I was too. The early demos were underwhelming — generating todo apps and fizzbuzz isn't exactly compelling when you've been doing this for two decades.
+
+But using AI on a real, messy, production codebase with actual architectural constraints? That's a completely different experience. The leverage is insane, and it gets better the more experience you have because you can actually evaluate and direct the output effectively.
+
+Start with the parts of the job you hate. For me that was writing tests and CDK. Let the AI do those. See how it goes. Then gradually let it into more of your workflow as you build trust.
+
+The gap between engineers who've figured this out and those who haven't is getting wide. And it's getting wider fast.
+
+---
+
+*First post on the new site. I've got a lot more to say about specific techniques and real examples — this is just the overview. More soon.*
