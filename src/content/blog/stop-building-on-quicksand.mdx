@@ -1,0 +1,137 @@
+---
+title: "Stop Building Your Business on API Quicksand"
+description: "Claude's API and OpenAI's API go down more than you think. If your product depends on them, you need to talk about Bedrock and Azure OpenAI. Here's the uncomfortable math."
+date: 2026-03-01
+tags: ["ai", "aws", "infrastructure", "hot-takes"]
+---
+
+I need to get some disclosures out of the way first.
+
+I work at AWS. I manage a large team of SDEs and PMs. **The opinions in this post are my own and do not represent Amazon, AWS, or any of its subsidiaries.** I'm writing this on my personal blog, on my personal time, because I think a lot of people are making a mistake that's going to bite them — and nobody seems to want to say it out loud.
+
+Okay. Let's go.
+
+## The thing nobody wants to talk about
+
+There's a dirty secret in the AI application space: the two most popular LLM APIs — Anthropic's Claude API and OpenAI's API — go down *a lot*. Not once-a-quarter blips. Multiple times a month, sometimes for hours.
+
+And yet I keep seeing companies wiring their core product directly to `api.openai.com` or `api.anthropic.com` like it's a utility. Like it's electricity. It's not. It's more like a generator you bought off Craigslist — it works great until it doesn't, and when it doesn't, nobody owes you anything.
+
+I know people will say "of course the AWS guy is pushing Bedrock." I get it. But I'm going to give you the actual numbers and let you decide.
+
+## OpenAI: The numbers are not great
+
+As of today — March 1, 2026 — OpenAI's own status page reports **99.76% API uptime over the past 90 days**. ChatGPT is at 98.90%. That sounds fine until you do the math. 99.76% means roughly **1.7 hours of downtime per month**. 98.90% means nearly **8 hours per month**.
+
+The raw numbers don't tell the full story. Some highlights:
+
+**November 8, 2023** — A memory leak took down every API endpoint for over 90 minutes. Engineers found code that was "continually allocating a new responseBuffer in a loop rather than reusing it." The same day — the *same day* — a DDoS attack (later attributed to Anonymous Sudan) caused intermittent disruptions that stretched across multiple days. 537 points and 566 comments on Hacker News. That's not a blip. That's an event.
+
+**December 2024** — The month from hell. Multiple outages including December 4, 11, and 26. The 11th was caused by a new telemetry service deployment that overwhelmed their Kubernetes DNS, cascading across the entire cluster — down from 3:16 PM to 7:38 PM PST. The 26th — during the holidays, skeleton crew staffing — hit 90%+ error rates and was the most-engaged outage thread on HN in recent memory. All of this happened during OpenAI's "12 Days of Shipmas" launch campaign. Shipping new features while production was on fire.
+
+**March 2025** — o1-pro hit a 50% error rate. Half your API calls failing outright.
+
+**August 2025** — GPT-5 rollout caused a production outage. Model launches destabilizing production. Again.
+
+**Today, March 1, 2026** — As I'm literally writing this, their status page shows "Increased Authentication Failures Affecting Some Users." You can't make this stuff up.
+
+## Anthropic: Better, but not good enough
+
+I use Claude constantly. It's my primary tool. But let me be honest about the infrastructure.
+
+Anthropic's status page reports **99.54% API uptime over the past 90 days**. That's roughly **3.3 hours of downtime per month**. Just last week — February 28, 2026 — there were elevated errors on Claude Opus 4.6 and claude.ai. If your production system was calling the API during that window, your users felt it.
+
+99.54% is not enterprise-grade. It's not even close.
+
+## I learned this one the hard way
+
+I'm not talking about this theoretically. I lived it.
+
+I built [FinEL Analytica](https://finelanalytica.com) — a financial analytics platform that parses SEC filings, normalizes XBRL data, and lets users research public companies. I [wrote about building it in 5 days](/blog/building-finel-in-5-days). LLMs are woven into the core of the product — analysis features, natural language queries, report generation. It's not a chatbot bolted onto the side, it's load-bearing infrastructure. If the LLM is down, major features don't work.
+
+When I first shipped FinEL, I was calling the Claude API directly. Simplest path — I knew the SDK, I wanted to move fast. It worked great. Until it didn't.
+
+I started getting 529s. A lot of them. HTTP 529 is Anthropic's status code for "we're overloaded." It's not a standard HTTP code — it was originally used by Qualys and a few other services, and Anthropic adopted it to distinguish "our servers are overwhelmed" from a normal rate limit. Your request isn't malformed, your API key is fine, you haven't hit your rate limit — their infrastructure just can't handle the load right now.
+
+I handled it the way you do — exponential backoff, retry logic, a toast notification saying "analysis is taking longer than expected." Then one evening I sat down to work on the app and couldn't even test my own features. 529 after 529 after 529. The LLM-powered parts of the product were completely unusable — not because of anything I'd done, but because Anthropic's servers were slammed. I just sat there, watching my retry logic dutifully back off into the void. That's when it clicked: I had built a product whose core functionality was at the mercy of someone else's capacity planning.
+
+I switched to Bedrock. Took about two hours — swap the SDK calls, update the IAM roles, change the model identifiers. Prompts stayed the same. Response format stayed the same. But the 529s stopped. Just... stopped. You're not competing with every other developer on the planet for the same pool of inference capacity anymore.
+
+Could I have built more elaborate retry logic? A queue system? A multi-provider fallback? Sure. But that's engineering time spent building reliability infrastructure instead of building my product. The reliability layer already exists. It's called Bedrock. Or Azure OpenAI, if that's your stack.
+
+## The SLA problem
+
+Here's the part that should terrify you:
+
+**Neither OpenAI nor Anthropic publish a formal SLA with uptime guarantees or financial remedies for their direct API.**
+
+There is no contractual commitment to uptime. No service credit if they go down. No financial recourse when their outage costs you revenue. You are building on a handshake.
+
+I tried to find Anthropic's SLA documentation. `docs.anthropic.com/en/docs/about-claude/sla` returns a 404. It literally doesn't exist. OpenAI's terms don't commit to specific uptime percentages either.
+
+Compare that to the cloud providers:
+
+| | OpenAI Direct | Claude Direct | AWS Bedrock | Azure OpenAI |
+|---|---|---|---|---|
+| **Uptime SLA** | None | None | 99.9% | 99.9% |
+| **Service Credits** | None | None | 10-100% tiered | Yes, per Microsoft SLA |
+| **Recent 90-Day Uptime** | 99.76% | 99.54% | N/A (AWS infra) | N/A (Azure infra) |
+| **Multi-Region Failover** | No | No | Yes | Yes |
+| **Compliance (FedRAMP, HIPAA, SOC)** | No | No | Yes | Yes |
+| **Private Networking** | No | No | VPC endpoints | VNet/Private endpoints |
+
+The gap between "no SLA" and "99.9% with financial penalties" is the difference between "we're sorry" and "here's a check."
+
+## The case for Bedrock
+
+I'm obviously biased, so I'll try to be fair.
+
+**Multi-model failover.** Bedrock gives you Claude, Llama, Mistral, Cohere, Titan, and others through a single API. If Claude is having a bad day, you route to Llama. With direct API you'd need separate SDKs, auth flows, prompt formats, and error handling for each provider. With Bedrock, it's a config change.
+
+**Cross-region inference.** Automatic failover across AWS regions. If us-east-1 is having issues, traffic routes to us-west-2. No code changes.
+
+**It's just AWS.** CloudWatch, IAM, VPC — your existing stack just works. No bolted-on third-party auth and monitoring.
+
+**Compliance and data guarantees.** FedRAMP High, HIPAA eligible, SOC, ISO. Never stores or uses your data to train models. Contractual, not a pinky promise.
+
+## The case for Azure OpenAI
+
+Credit where it's due. If you're an OpenAI shop, Azure OpenAI is the right move.
+
+Same models — GPT-4.1, o-series, the whole lineup — with a **99.9% uptime SLA** and real service credits. Provisioned Throughput Units give you dedicated capacity with guaranteed latency. VNet integration, private endpoints, managed identity auth. Seven-tier quota system with automatic upgrades.
+
+If your team knows OpenAI's models and you're on Azure, this is the obvious choice.
+
+## The tradeoffs
+
+**Cost.** Both add a margin on top of direct API pricing. For hobby projects and prototypes, direct APIs are cheaper. Period.
+
+**Model availability lag.** New models don't show up on Bedrock or Azure the same day. Sometimes days, sometimes weeks. If you need bleeding edge the moment a model drops, direct API gives you that.
+
+**Feature parity.** Some features hit the direct API first — extended thinking, real-time API. The gap has been closing, but it's not zero.
+
+**Vendor lock-in.** You're trading one dependency for another. Except now you're locked to a cloud provider with a multi-decade track record and a real SLA instead of an AI company with neither. I know which lock-in I'd pick.
+
+**Complexity.** If you're a solo dev shipping a side project, Bedrock with IAM roles is overkill. Just call the API directly. I'm not talking to you — I'm talking to the teams building products that people pay for.
+
+## So who should care?
+
+If your AI feature is core to your product — if users can't do the main thing when the LLM is down — you need a cloud provider layer. Full stop.
+
+If you're in a regulated industry, you need the compliance certifications that only come with Bedrock or Azure.
+
+If your error handling code for API timeouts and rate limits is getting suspiciously complex, that's the signal. You're building your own reliability layer from scratch. Poorly. Use the one that already exists.
+
+If you're hacking on a weekend project? Call the API directly. It's fine. I do it too.
+
+## The uncomfortable conclusion
+
+**Neither OpenAI nor Anthropic will give you an SLA.** When your product goes down because their API goes down — and it will — your only recourse is to check their status page and wait. Your customers won't care whose fault it is. They'll care that your product doesn't work.
+
+Bedrock and Azure OpenAI are the only paths to guaranteed uptime for LLM-powered applications today. That's not an AWS pitch. That's just the math.
+
+If you're building something that matters, build it on something that comes with a guarantee.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries. I have a clear bias — I acknowledge it, I've tried to present the tradeoffs honestly, and I trust you to make your own call.*
