@@ -1,0 +1,141 @@
+---
+title: "AI Killed the SaaS Middleman"
+description: "SendGrid, LaunchDarkly, Auth0 — I built all of it faster than I would have signed up for an account. Here's what it cost me."
+date: 2026-03-06
+tags: ["ai", "aws", "finel", "hot-takes"]
+---
+
+I need to get the disclaimers out of the way again.
+
+I work at AWS. **The opinions in this post are my own and do not represent Amazon, AWS, or any of its subsidiaries.** I'm also not saying everyone should do what I did. More on that later.
+
+Okay. Let's talk about something that's been bugging me.
+
+## The SaaS tax
+
+When I started building [FinEL Analytica](https://finelanalytica.com), I did what every developer does. I made a mental list of the services I'd need. Auth — probably Auth0 or Cognito. Transactional email — SendGrid. Feature flags and entitlements — LaunchDarkly. You know the stack. Everybody picks from the same menu.
+
+Then I opened the pricing pages and started doing the math. Auth0 plus SendGrid plus LaunchDarkly, wired into my project, maintained forever, paid monthly. For a side project that doesn't have revenue yet.
+
+And then something happened that wouldn't have been possible two years ago. I said to Claude, "build me an email service" — and an hour later I had one. Not a toy. A production service with 21 template types, HTML and plaintext rendering, SQS queuing, dead letter handling, and DKIM authentication. Running on AWS SES for a fraction of a penny per email.
+
+I never signed up for SendGrid.
+
+## What I actually built
+
+Let me walk you through what "build it yourself" actually looks like in 2026.
+
+### Email service (the SendGrid replacement)
+
+The email service is a Rust Lambda that consumes messages from an SQS queue. Any service that needs to send an email drops a JSON message on the queue — recipient, email type, metadata — and the Lambda picks it up, pulls the right Handlebars template from S3, renders HTML and plaintext versions, and sends it through SES with DKIM signing. The whole pipeline is async with automatic retries and a dead letter queue after 10 failures.
+
+Twenty-one email types covering everything from password resets to dunning reminders to promo lifecycle emails. Every one with a proper HTML template and a plaintext fallback. Claude wrote all of them in about 20 minutes.
+
+But here's where owning the stack really pays off. For integration tests, I needed to test the full user onboarding flow — not just "call the API and check the response," but the actual flow where an admin creates a user, the user receives a welcome email with a password reset link, extracts the link, sets their password, and logs in. The real flow. With real emails.
+
+With SendGrid, testing this would mean either mocking the email layer (defeating the purpose of an integration test) or paying for a higher tier with inbound parse webhooks and building custom infrastructure to capture test emails.
+
+Here's what I did instead: I added an SES receipt rule that captures any email sent to a test subdomain and drops it in an S3 bucket. Five lines of CDK:
+
+```typescript
+ruleSet.addRule('CaptureTestEmails', {
+  recipients: ['test.example.com'],
+  actions: [
+    new sesActions.S3({ bucket: testEmailBucket, objectKeyPrefix: 'incoming/' }),
+  ],
+});
+```
+
+The integration test creates a user with an email on that test subdomain, waits for the welcome email to land in S3, parses out the reset URL and code, completes the password reset, and logs in. The full end-to-end onboarding flow. No mocks. No special test mode. No subscription upgrade. Cost: effectively zero.
+
+**Monthly cost: ~$1-5 depending on volume.** SendGrid Essentials is $19.95/month for the same thing, and I'd still have to write the integration code. And I definitely wouldn't be able to capture inbound emails for testing without upgrading.
+
+### Entitlement system (the LaunchDarkly replacement)
+
+This one might be my favorite because it's the cleanest example of "I built this faster than I would have integrated the SaaS product."
+
+The entitlement system is a single DynamoDB table with a three-level resolution chain: feature catalog → tier defaults → per-user overrides. That's it. That's the whole thing.
+
+When a user logs in, the auth service fires three concurrent DynamoDB queries — catalog, tier, user overrides — and merges them. User override wins over tier default wins over catalog default. The resolved entitlements get cached in Redis and passed through the API Gateway authorizer on every request.
+
+```
+Resolution chain: USER#phil@example.com → TIER#beta → FEATURE (catalog)
+```
+
+I don't need LaunchDarkly's percentage rollouts or A/B testing on feature flags. I need to know whether a user on the Explorer plan can access the AI research assistant, and whether I've granted someone temporary access to the report generator. Done.
+
+Per-user overrides support expiration dates — I can grant access to a premium feature for 30 days and it automatically falls back to their tier default. The billing service syncs entitlements when subscriptions change, then pushes updates over WebSocket. The user sees their features update in real time without refreshing the page.
+
+**Monthly cost: literally pennies.** DynamoDB on-demand pricing is $0.25 per million reads. I'm not doing a million reads. LaunchDarkly Foundation starts at $10-12 per service connection per month. With 10 services across 2 environments, that's $200-240/month for feature flags.
+
+### Auth service (the Auth0 replacement)
+
+**I am not recommending that you build your own auth service.** If you don't have deep experience with authentication security, the security benefits of Auth0 or Cognito will outweigh the cost savings. Auth is where a subtle bug doesn't show up as a failing test — it shows up as a breach.
+
+That said, I've been building auth systems for 20 years. I know where the landmines are.
+
+The auth service is a Rust Lambda behind API Gateway. User records live in DynamoDB. Sessions are UUID tokens stored in Redis with a one-hour TTL that extends on activity, plus a hard six-hour maximum lifetime. No JWTs — I didn't want to deal with token revocation headaches, and Redis lookups are sub-millisecond from a Lambda in the same VPC.
+
+Security measures:
+- **Password hashing**: Salted and hashed — passwords never hit DynamoDB in plaintext
+- **Password requirements**: 12+ characters, upper, lower, number, symbol, can't contain your email
+- **Brute force protection**: Automatic lockout after repeated failed attempts
+- **Bot protection**: Cloudflare Turnstile verification on login and registration
+- **Session management**: Concurrent session limits per tier, automatic pruning of dead sessions, pipelined Redis operations
+- **API key auth**: Hashed keys with Redis-cached lookups and DynamoDB fallback, per-key rate limiting
+- **Rate limiting**: Per-session and per-API-key, enforced at the authorizer level
+
+A separate authorizer Lambda validates every API Gateway request — checks the token or API key in Redis, enforces rate limits, and passes the user's identity, entitlements, and tier through to the downstream service. All in a single Redis pipeline. Social login goes through Cognito as a pure OAuth broker for Google — I'm not using Cognito's user management, just the OAuth flow.
+
+**Monthly cost: ~$12 for the ElastiCache node, pennies for DynamoDB and Lambda.** Auth0 Essentials is $32/month with limited features. Professional — which is where you get things like brute force protection and MFA — is $220/month.
+
+## The cost comparison
+
+Let's put it all in one place.
+
+| | My Custom Stack | Equivalent SaaS |
+|---|---|---|
+| **Auth** | ElastiCache + DynamoDB + Lambda: ~$12-15 | Auth0 Essentials: $32/mo |
+| **Email** | SES + SQS + S3: ~$1-5 | SendGrid Essentials: $19.95/mo |
+| **Feature flags** | DynamoDB on-demand: pennies | LaunchDarkly Foundation: $100-240/mo |
+| **Total** | **~$15-25/mo** | **~$150-290/mo** |
+
+&nbsp;
+
+That's a 6-19x difference. And I'm comparing against the *cheapest* tiers. Auth0 Professional — which is where you get the security features that actually matter — is $220/month by itself. SendGrid Pro with a dedicated IP is $89.95. The real-world SaaS bill for a production application is closer to $400-500/month before you've written a line of product code.
+
+My infrastructure costs me about what I'd spend on lunch.
+
+## But what about maintenance?
+
+This is the objection I hear most often: "Sure, but now you have to maintain it."
+
+Here's the thing — you have to maintain the integration too. Every SaaS product you wire in is a dependency. APIs get deprecated. SDKs need updating. Webhook formats change. Pricing tiers get restructured. I've been on the other end of a SendGrid webhook format change at a previous job. It was not fun.
+
+Most bugs come from the introduction of new code. This is true whether that code is an integration or something you built yourself. What changes is where you look when something breaks. With my own code, I look at my own code. With an integration, I look at my code, then their code, then the interaction between the two, then their status page, then their support ticket system.
+
+I've had zero production incidents from my email service, entitlement system, or auth service since launch. Compare that to the time I've spent debugging OAuth callback mismatches with third-party auth providers at previous jobs.
+
+## When to ignore everything I just said
+
+I want to be really clear about when this advice does *not* apply.
+
+**Don't build your own auth if you don't know what you're doing.** I've seen hand-rolled auth systems that store passwords in plaintext, use MD5 hashing, don't rate limit anything, and have "remember me" tokens that never expire. If you're not confident you can build authentication that's *at least* as secure as Auth0, pay for Auth0. The cost of a breach is infinitely higher than $32/month.
+
+**Don't build it if the SaaS product is genuinely better than what you need.** If you're running multivariate experiments across 50 microservices with percentage rollouts and A/B testing, LaunchDarkly is worth every penny. If you need IP warming and inbox placement testing, SendGrid Pro is the right call. I'm sending transactional emails and checking boolean feature flags. The SaaS products are overbuilt for my use case.
+
+**Don't build it if your time is more valuable than the cost.** If you're at a funded startup burning runway, spend the $300/month and ship your product. The calculus changes when you're a solo developer and the AI makes the build cost nearly zero.
+
+## The uncomfortable conclusion
+
+Here's what changed: the build-versus-buy equation used to be "spend a week building it or spend $30/month." That was an easy decision — you buy it. Now the equation is "spend an evening building it or spend $300/month." That's a very different calculation.
+
+AI didn't just make coding faster. It collapsed the integration cost advantage that SaaS products have been riding for a decade. The whole value proposition of SendGrid is "don't waste a week building email infrastructure." But I didn't waste a week. I spent an evening. And I got something that does exactly what I need, costs almost nothing to run, and has zero external dependencies.
+
+I think a lot of SaaS companies in the developer tools space are about to have a very uncomfortable reckoning. Not the ones that provide genuinely complex, hard-to-replicate functionality — Stripe for payments, Datadog for observability at scale, Snowflake for data warehousing. Those are safe. But the ones whose core value proposition is "we saved you from writing 500 lines of code"? That value proposition just evaporated.
+
+When a developer with 20 years of experience and an AI assistant can build your entire product as a side feature in an evening, you don't have a product anymore. You have a convenience fee. And convenience fees don't survive when the inconvenience disappears.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries. I acknowledge the bias — I build on AWS, I work at AWS, and the custom solutions I describe use AWS services. Make your own call.*
