@@ -1,0 +1,118 @@
+---
+title: "Senior Engineers, This Is Your Moment"
+description: "AI didn't replace senior engineers — it gave them leverage they've never had. If you understand architecture and know what good looks like, you're unstoppable."
+date: 2026-03-13
+tags: ["ai", "career", "architecture", "finel"]
+---
+
+I need to get the disclaimers out of the way again.
+
+I work at AWS. **The opinions in this post are my own and do not represent Amazon, AWS, or any of its subsidiaries.**
+
+Okay. Let's talk about something I've been thinking about for a while.
+
+## The side project graveyard
+
+Every senior engineer I know has one. A folder on their laptop — maybe a GitHub repo with three commits from 2019 — full of ideas that died because the math didn't work. You have a full-time job, maybe a family, and the thing you want to build needs auth, billing, a data pipeline, infrastructure, a frontend, and six months of evenings you don't have.
+
+So the idea sits there. You think about it in the shower. You sketch architectures on napkins. Maybe you spend a weekend getting the scaffolding up, feel good about it, then don't touch it for three months. By the time you come back, you've lost all the context and starting over feels easier than picking up where you left off.
+
+I lived in that cycle for years. I have half-finished projects going back to 2015.
+
+Then I built [FinEL Analytica](https://finelanalytica.com) — a financial analytics platform that parses SEC filings, classifies financial line items with custom ML models, and lets users research public companies. Rust backend, 15+ Lambda services, React frontend, Stripe billing. The kind of thing that would normally need a team of 4-5 engineers working full-time for a year.
+
+I built it solo. Evenings and weekends. While working a demanding day job. And it's in production with paying users.
+
+That's not a flex. That's the point of this entire post. **The math changed.** The side project graveyard doesn't have to keep growing.
+
+## But only if you're senior
+
+Here's the part nobody wants to say out loud: AI coding tools are disproportionately powerful in the hands of experienced engineers. Not slightly more powerful. *Disproportionately*.
+
+A junior developer using Claude gets code that compiles. A senior developer using Claude gets code that belongs in the codebase. The difference is everything that happens between "it works" and "it's correct" — and that gap is invisible to anyone who doesn't already know what correct looks like.
+
+I'm not gatekeeping. I'm stating a fact about where the leverage actually is. If you've spent 15-20 years building systems, debugging production incidents at 2am, watching elegant architectures decay into spaghetti, and learning — often painfully — what good software looks like, you have something that no AI can replicate: judgment.
+
+And judgment is the bottleneck now.
+
+## You have to wrestle with it
+
+Nobody mentions this in the "AI built my app in a weekend" threads: you have to fight the AI constantly. It's not a co-pilot that quietly follows your lead. It's a very fast, very confident junior engineer with strong opinions about how things should work — and those opinions are frequently wrong for your specific codebase.
+
+Here's my favorite recurring battle. I have a microservices architecture. Clear service boundaries. The auth service owns sessions and entitlements. The API service owns the database. Other services communicate through defined APIs. Simple, clean, well-documented.
+
+Claude does not care.
+
+Every single session, Claude wants to reach into the database from whatever service we're working on. Building a feature in the billing service? Claude queries the user table directly instead of calling the auth service API. Working on the email service? Claude hits the database for user preferences instead of using the data already on the queue message.
+
+I have this rule documented in my project notes. Claude reads those notes at the start of every session. It still does it. Every. Single. Time.
+
+The conversation goes like this:
+
+> **Me:** "We need to check the user's tier before processing this."
+>
+> **Claude:** *Writes a DynamoDB query to read the user record directly*
+>
+> **Me:** "No. The billing service doesn't access the user table. That's the auth service's domain. Call the auth service endpoint."
+>
+> **Claude:** "You're right, let me fix that." *Rewrites it correctly*
+
+Two sessions later, different feature, same service:
+
+> **Claude:** *Writes another direct DynamoDB query*
+>
+> **Me:** *Sigh*
+
+This isn't a complaint about Claude. It's the most capable coding tool I've ever used by a massive margin. But it takes the shortest path to a working solution, and the shortest path often means ignoring architectural boundaries that exist for very good reasons.
+
+A junior developer would do the same thing. The difference is you can teach a junior developer once and they remember. Claude needs to be told every session. The architecture knowledge — *why* the boundary exists, what breaks when you violate it — that's entirely on you.
+
+If you don't know where the boundaries should be, the AI will happily build you a tightly coupled mess that works perfectly right up until it doesn't.
+
+## Breaking the problem down is the whole game
+
+The quality of what you build with AI is almost entirely determined by how well you decompose the problem. The AI is a brilliant executor of well-scoped tasks. It's a terrible architect of complex systems.
+
+Here's a concrete example. FinEL has a classification pipeline that takes raw SEC XBRL filings and turns them into normalized financial data. This is a genuinely hard problem — filings have wildly different structures across industries, the same financial concept can be tagged dozens of different ways, and the relationships between line items are hierarchical in ways that don't map cleanly to any standard taxonomy.
+
+There are very few working examples of this in the wild. My business partner spent five years building a classification model for this. When we decided to productionize it as an automated pipeline, I couldn't point Claude at an existing implementation and say "build something like this." It didn't exist.
+
+So I broke it down. Not into one big prompt, but into a sequence of discrete stages — each with clear inputs, clear outputs, and concrete success criteria. Parse the raw filing. Classify it. Validate the output. Publish. Each stage is something Claude can execute well on its own.
+
+But the decomposition — deciding what those stages should be, what order they go in, how to handle the edge cases where filings don't follow the expected structure — that was entirely me. Informed by my partner's domain expertise and years of research, translated into an architecture that could be built incrementally.
+
+I didn't sit down and say "build me a financial data classification pipeline." I said "here's step one, here's what it reads, here's what it produces, here are the edge cases." Claude nailed it. Then I said "here's step two," and so on. Each step built on the proven output of the last one.
+
+The pipeline now runs across multiple compute environments, orchestrating several ML models, and processes thousands of filings. I built it one well-scoped task at a time.
+
+If I'd tried to describe the whole thing at once, I'd have gotten slop. Breaking it down is not a nice-to-have. It's the only way this works for anything non-trivial.
+
+And here's the thing that surprises people: my prompts are short. The longest prompt I used to build any of this was maybe 100 words. No elaborate multi-page instructions. If you've broken the problem down well enough, the prompt is almost trivially simple — "here's the input, here's what the output should look like, here are the constraints." The work already happened before you typed anything. The decomposition *is* the prompt engineering.
+
+## Why this matters right now
+
+There's a window open that I don't think will stay open forever.
+
+Right now, senior engineers have a unique advantage. The tools are powerful enough to turn one experienced person into a small team, but they're not powerful enough to replace the experience. The judgment, the architectural knowledge, the ability to decompose a problem that's never been solved before — the AI needs all of that from you.
+
+The side projects you've been sitting on for years? The startup ideas you shelved because you couldn't justify quitting your job? The problems in your domain that you know exactly how to solve but never had the bandwidth to build?
+
+The bandwidth exists now. I'm living proof. I built a complex production platform in evenings and weekends. Not because I'm special, but because the leverage is genuinely that good.
+
+But it only works if you bring the senior part. The AI handles the typing. You handle the thinking. And the thinking is harder than it's ever been — the surface area of what you can build in an evening is enormous, which means architectural decisions come faster and the consequences of getting them wrong compound faster.
+
+## The opportunity
+
+Here's what I want every senior engineer reading this to hear.
+
+You are not being replaced. You are being leveraged. The skills you spent decades building — system design, domain expertise, the instinct that something is wrong before you can articulate why — those are more valuable now than at any point in your career. Not because the job is the same. Because the job shifted to the thing you're best at.
+
+If you understand the problem, understand what architecture can solve it, can break it down into small manageable chunks, and know what good looks like — you are unstoppable. That's not hype. That's what I've been living for the past year.
+
+Stop letting those side projects collect dust. "I don't have time." "I'd need a team." "I can't justify leaving my job." Those excuses evaporated. You don't need a team. You don't need to quit. You need an evening, a clear problem statement, and the experience to know what good looks like.
+
+You already have the hardest part. Now go build something.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
