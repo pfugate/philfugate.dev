@@ -1,0 +1,140 @@
+---
+title: "Use It or Lose It"
+description: "AI is making us faster. It might also be making us dumber. The cognitive muscles that matter most are the ones we're most eager to hand off."
+date: 2026-03-20
+tags: ["ai", "career", "society", "hot-takes"]
+---
+
+I need to get the disclaimers out of the way again.
+
+I work at AWS. **The opinions in this post are my own and do not represent Amazon, AWS, or any of its subsidiaries.**
+
+And one more: I am not anti-AI. I've written extensively on this blog about how AI changed my career, how I built an entire platform with it, and why I think senior engineers are in the best position they've ever been in. I use Claude every single day. I'm not here to tell you AI is bad.
+
+I'm here to tell you something more uncomfortable: AI might be making us worse at the things that matter most. And we're not paying attention.
+
+## The Google Maps effect
+
+Think about the last time you drove somewhere new without GPS. Can you even remember? I can't. I used to navigate by landmarks, mental maps, a general sense of direction. I was decent at it. Now I can't get to a restaurant I've been to three times without pulling up Waze.
+
+I didn't decide to stop learning routes. It just happened. The skill atrophied because I stopped using it. Why would I exercise that muscle when my phone does it better?
+
+That's mildly inconvenient for navigation. It's a lot less funny when the same thing happens to doctors.
+
+## The study that should scare you
+
+In August 2025, researchers [published a study](https://fortune.com/2025/08/26/ai-overreliance-doctor-procedure-study/) in *The Lancet Gastroenterology & Hepatology* that tracked 19 experienced endoscopists across four centers in Poland. They measured how well these doctors detected adenomas — precancerous polyps — during colonoscopies. First without AI assistance, then after several months of working with an AI tool that highlighted abnormalities on screen.
+
+Before AI: 28.4% detection rate.
+
+After months of using AI, they took the tool away and tested again.
+
+22.4%.
+
+A six percentage point drop — from 28% to 22%. That might not sound dramatic until you remember what's being missed: precancerous growths. These aren't students. These are experienced specialists. The AI didn't just help them while it was on — it quietly dulled a skill they'd spent years developing. When the crutch was removed, the leg couldn't hold weight the way it used to.
+
+Dr. Marcin Romańczyk, who led the study, called it the "Google Maps effect." The doctors didn't decide to get worse. The skill just softened because something else was doing the work.
+
+And there's a second problem beyond the atrophy.
+
+A separate [study published in *Radiology*](https://www.rsna.org/media/press/i/2552) tested 220 physicians — radiologists, internists, ER docs — evaluating chest X-rays with AI assistance. When the AI's recommendation was correct, doctors agreed and achieved 92.8% diagnostic accuracy. But when the researchers deliberately gave doctors *incorrect* AI recommendations? Accuracy didn't just dip. It fell to 23.6%.
+
+Think about what that means. These physicians had the X-ray right in front of them. They had years of training. They had their own eyes and their own clinical judgment. And when the AI said "this is normal" on an abnormal X-ray, three out of four of them went along with it.
+
+They didn't lose the skill over time like the endoscopists. They just... stopped using it in the moment. The AI's opinion outweighed their own, even when their own was right.
+
+## This is not a medicine problem
+
+It's easy to read those studies and think "okay, scary for healthcare, but that's a specialized field." It's not specialized at all. It's a human cognition problem and it's everywhere.
+
+I see it in my own field every day. I've written about how I use AI to build software — how I treat Claude like a team of fast junior engineers. But here's something I haven't said out loud: I catch myself getting lazy. Not about the architecture or the judgment calls — I still fight those battles every session. But the smaller stuff. The stuff I used to just *know*.
+
+I used to hold the shape of a SQL query in my head while I was writing the code that would call it. Now I describe what I want and Claude writes it. My SQL isn't gone, but it's softer than it used to be. The edges aren't as sharp. I notice it when I'm in a meeting and someone asks a quick database question and I hesitate for a half-second longer than I would have two years ago.
+
+That half-second is the atrophy. It's small. It's easy to dismiss. And it's the exact same mechanism that took those endoscopists from 28% to 22%.
+
+## The generation that never builds the muscle
+
+Here's where it gets really concerning.
+
+I'm a senior engineer with 20 years of reps. When my SQL gets a little soft, I still have the foundation. I know *what* a query should look like even when I can't type it from memory as fast. The muscle atrophied a little, but it was built in the first place.
+
+What happens when the muscle never gets built at all?
+
+Students have always looked for shortcuts. That's not new. Cliff's Notes, homework copying, Stack Overflow — every generation finds ways to skip the hard parts of learning. But there used to be a natural correction mechanism: you got to the job and the shortcuts stopped working. The real world demanded real understanding, and you either built it on the job or you washed out.
+
+That correction mechanism is disappearing.
+
+A new grad today can lean on AI through school *and* through their first job *and* through their second job. They can produce work that looks competent without ever developing the underlying understanding that makes the competence real. The feedback loop that used to force learning — "I don't actually understand this, and it's showing in my work" — gets muted when AI fills in the gaps invisibly.
+
+This isn't the student's fault. They're being rational. If AI can help you write code that passes code review, ship features that work, and get promoted — why would you spend the painful hours building deep understanding? The incentive to actually learn is being eroded by a tool that lets you skip learning and still get the reward.
+
+But the understanding matters. It matters the same way those doctors' adenoma detection skills mattered. Not when things are going right and the tool is working. When things go wrong. When the AI is confidently incorrect and you need your own judgment to catch it. When you're in a meeting and need to reason about a system from first principles. When the tool is down, or the problem is novel, or the stakes are high enough that "close" isn't good enough.
+
+## The slow spiral
+
+This is what worries me most. It's not a cliff — it's a gentle slope.
+
+Year one: new engineers lean on AI but still learn a decent amount through osmosis and code review.
+
+Year three: the baseline shifts. Fewer engineers on the team have deep foundational knowledge. Code reviews catch fewer issues because the reviewers are using AI too. The standard for "understanding" quietly drops.
+
+Year five: the engineers who came up without AI are the senior staff now, but there aren't enough of them. They're stretched thin. The mid-level engineers never built the muscles that used to be table stakes for the role. They're productive — AI makes sure of that — but they're brittle. They can't debug without AI. They can't design without AI. They can't reason about failure modes that the AI hasn't seen before.
+
+Year ten: who's training the new engineers? The mid-levels who never learned deeply themselves. The knowledge transfer breaks down because you can't teach what you don't have.
+
+I'm not predicting this will definitely happen. I'm saying the mechanism is already in motion and I don't see what stops it. The colonoscopy study isn't a warning about the future. It's showing us something that's already happening, in a field with far more rigorous training standards than software engineering.
+
+## The workout
+
+I don't have a tidy solution. I'm not going to tell you to stop using AI — I certainly haven't, and I won't. But I've started being deliberate about what I hand off and what I don't.
+
+Some things I've started doing:
+
+**I write the first draft of hard logic by hand.** Not everything. But the parts that require real reasoning — the algorithm, the state machine, the tricky SQL join — I write those myself first. Then I let Claude improve them. The difference between "I wrote this and Claude refined it" and "Claude wrote this and I approved it" is the difference between exercise and watching someone else exercise.
+
+**I debug without AI first.** When something breaks, I give myself 15-20 minutes before I bring Claude in. Read the error. Form a hypothesis. Check it. I'm often wrong, and Claude would have found it faster. But those 15 minutes are reps. They're keeping the muscle alive.
+
+**I explain systems out loud.** If I can't explain how a piece of my own codebase works without looking at the code, that's a red flag. It means I approved something I didn't actually understand. I go back and understand it.
+
+These aren't productivity optimizations. They're the opposite — they're deliberately slower. But so is going to the gym. You don't go to the gym because it's efficient. You go because the muscle matters and it won't maintain itself.
+
+## If you're early in your career, read this
+
+I've spent most of this post talking about atrophy — skills getting weaker. If you're a junior engineer or a student, you have a different problem. You're trying to build the muscle in an environment that's actively telling you not to bother.
+
+Your manager wants features shipped fast. AI lets you ship fast. Nobody is going to pull you aside and say "hey, I know you delivered that feature on time, but did you actually understand the code you shipped?" That's not how performance reviews work.
+
+So you have to advocate for your own learning, even when nobody's asking you to. Especially when nobody's asking you to. Here's what I'd do if I were starting out today.
+
+**Build something without AI.** Not your day job — a side project, a toy, something small. Build it the slow way. Google the error messages. Read the documentation. Write bad code and figure out why it's bad. This will feel painfully slow compared to what you can do with AI. That's the point. You're not optimizing for output. You're building the foundation that makes AI useful instead of dangerous. A developer who understands what the AI is producing can direct it, challenge it, catch its mistakes. A developer who doesn't understand is just a middleman passing code from the AI to the codebase and hoping for the best.
+
+**Read the code the AI writes.** Not skim it. Read it. When Claude writes a function, ask yourself — could I have written this? Do I understand why it chose this approach? If the answer is no, stop and learn. Treat AI-generated code like a textbook, not a black box. Every piece of code it writes is an opportunity to understand a pattern, a library, an approach you haven't seen before. But only if you actually look at it.
+
+**Learn to debug by hand.** This might be the single most important skill to build early, and it's the one AI makes easiest to skip. When something breaks, resist the urge to paste the error into Claude. Read the stack trace. Form a hypothesis. Be wrong. Be wrong again. That cycle of hypothesis → test → wrong → new hypothesis is how you develop the instinct that separates engineers who can reason about systems from engineers who can only operate them when everything's working.
+
+**Understand the "why" behind the code, not just the "what."** AI is great at producing code that works. It's terrible at explaining why this approach was chosen over the five other approaches that also would have worked. The architectural reasoning — why we use a queue here instead of a direct call, why this data lives in Redis instead of the database, why this function is split into three smaller functions — that reasoning is what makes you a senior engineer eventually. And you don't get it from reading AI output. You get it from asking questions, making mistakes, and building a mental model of how systems fit together.
+
+I know this is hard advice to follow. The industry is telling you speed is everything. Your peers are shipping faster with AI and it feels like you're falling behind if you slow down to actually learn. You're not falling behind. You're building something they're not. And five years from now, when the tool goes wrong or the problem is novel or someone needs to actually *understand* the system — you'll be the one who can.
+
+## What's actually precious
+
+Here's what I keep coming back to.
+
+The things AI is best at replacing are the things that feel like work — the boilerplate, the syntax, the tedious translation of intent into code. And we're thrilled to hand those off. I am too. That's a genuine win.
+
+But cognitive effort doesn't sort itself neatly into "stuff that matters" and "stuff that doesn't." Some of the thinking that feels tedious is actually building the neural pathways you need for the thinking that feels important. Writing SQL by hand isn't just about writing SQL. It's about maintaining a mental model of your data. Debugging without help isn't just about finding the bug. It's about strengthening your ability to reason about systems.
+
+When you hand off the reps, you don't just lose the reps. You lose what the reps were building.
+
+Those doctors didn't forget how to look at a colonoscopy. They lost the sharpness that came from doing it thousands of times without a green box telling them where to look. The knowledge was still in there somewhere. But knowledge without practice becomes theory, and theory without practice becomes trivia.
+
+We are living through the most powerful augmentation of human capability in history. I believe that. I'm building my career on it. But augmentation only works if there's something to augment. If we let the underlying capability atrophy — if we trade depth for speed and don't even notice we're doing it — we won't have a workforce that's enhanced by AI. We'll have a workforce that's dependent on it.
+
+And dependency is a very different thing than leverage.
+
+The muscle matters. Keep working out.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
