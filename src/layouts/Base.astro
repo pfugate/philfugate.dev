@@ -114,6 +114,9 @@ const navLinks = [
           <a href="https://github.com/pfugate" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
+      <div class="footer-disclaimer">
+        <p>The opinions expressed on this site are my own and do not represent Amazon, AWS, or any of its subsidiaries.</p>
+      </div>
     </footer>
   </body>
 </html>
@@ -212,6 +215,14 @@ const navLinks = [
 
   .footer-links a:hover {
     color: var(--text-muted);
+  }
+
+  .footer-disclaimer {
+    max-width: var(--max-width-wide);
+    margin: 0 auto;
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.7rem;
+    color: var(--text-faint);
   }
 
   @media (max-width: 640px) {

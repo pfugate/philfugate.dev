@@ -32,7 +32,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
             <a href={`/blog/${post.id}`} class="post-link">
               <span class="post-title">{post.data.title}</span>
               <span class="post-date">
-                {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(post.data.date.getTime() + post.data.date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </a>
           </li>

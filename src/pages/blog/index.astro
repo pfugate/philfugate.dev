@@ -25,7 +25,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
                 <span class="post-desc">{post.data.description}</span>
               </div>
               <time datetime={post.data.date.toISOString()}>
-                {post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(post.data.date.getTime() + post.data.date.getTimezoneOffset() * 60000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </time>
             </a>
           </li>

@@ -1,0 +1,80 @@
+---
+title: "I Love to Build. I Don't Love to Code."
+description: "AI didn't make me a faster coder. It let me stop coding and start building again."
+date: 2026-04-03
+tags: ["ai", "engineering", "building"]
+---
+
+## The year I didn't build anything
+
+I had been avoiding FinEL for almost a year.
+
+Not intentionally. I'd done some real work during my paternity leave in February 2025, building out services and getting the bones of the platform together. But after that, life happened. Work picked up, the baby wasn't sleeping, and the project just sat there. I'd open the repo every few weeks, look at the code, close the laptop. AI at that point wasn't helping in a way that meaningfully sped me up, so the calculus was the same as it had always been: every feature meant the same grind it always did, and I didn't have the hours.
+
+Part of what was holding me back was the frontend. I'm not a frontend developer. I know what looks good and what doesn't. I can tell you exactly why a layout isn't working. But getting from "this looks bad" to "this looks good" with my own hands has never been my skill set. So I asked my partner to mock up what he envisioned in Power BI, figuring I'd figure out the implementation later.
+
+Then in early February, Amazon started pushing teams harder to adopt AI tooling. Opus 4.6 had just dropped and I wanted to actually use it before asking my team to go deep on it. So on the evening of February 5th, I installed Claude Code, pointed it at the Power BI mockup, and asked it to build a frontend for FinEL.
+
+What came out was stunning. Claude took our rough mockup and turned it into something that looked like a talented UI designer had spent weeks on it. Clean typography, thoughtful spacing, a color palette that actually worked together. I had barely guided it. I sat there staring at my screen, genuinely impressed by something I had made. I've never felt that way about frontend code before.
+
+I was so excited that I started wiring up the backend services I'd built the year before. Auth, user profiles, data rendering, a working prototype of the LLM interface. Before I knew it, it was 3am and I had a functioning application. In six hours I had built what would have taken the highest performing team I'd ever worked with about three months.
+
+Over the next four evenings I added a billing service, beta testing workflows, finalized the LLM-powered explorer and report service, a curated news feed with LLM tagging, market data integrations, a 13F parsing pipeline for ownership data, and three MCP tools. Twenty hours total.
+
+The rush was real. But it wasn't about the speed. Speed is satisfying, but it doesn't keep you up past midnight. Something else was going on.
+
+I was building again. Actually building.
+
+## Building is not coding
+
+There's a difference between building and coding. Most engineers feel it even if they've never put words to it. Building is thinking about how a system should work. You break a problem into pieces, decide which tradeoffs you're willing to live with, see the shape of something before it exists. That's engineering.
+
+Coding is closer to drafting. It's an expression of the engineering, but it's not the engineering itself. A civil engineer who designs a bridge isn't doing the same work as the drafter who produces the technical drawings. Both require skill, but one is the creative act and the other is the artifact.
+
+For a lot of senior engineers, the coding stopped being fun a long time ago. You know what the code should do. You can see the solution. But you still have to sit there and type it out, handle the edge cases, fight the CSS, debug the thing that should work but doesn't because of some dependency you've never heard of. That's not engineering. That's drafting.
+
+I love to build. I don't love to code.
+
+And for the first time in my career, I don't have to pretend those are the same thing. AI handles the drafting now. What's left is the part I actually care about: architecture, system design, creative problem-solving. The thinking is the job. The code is the artifact.
+
+## The sparring partner
+
+What surprised me most wasn't the code generation. It was the arguing.
+
+I have strong opinions about authentication architecture. Single gateway entry point, one session store, non-federated auth. The industry has been moving toward distributed JWTs for years, and it makes sense at certain scales. But in highly compliant environments, or anything handling sensitive data, distributed auth increases your attack surface. If you make your infrastructure enforce who can talk to what, if the canary service is the only thing that can reach the service lambdas, you collapse the threat surface significantly. The tradeoffs at scale are worth it.
+
+I wanted to stress-test this. So I asked Gemini to push back on my design. Not to validate it, but to fight me.
+
+It did. It gave me the standard case for distributed JWTs: no single point of failure, reduced latency, better horizontal scaling. Legitimate arguments. I pushed back on the compliance angle. Distributed tokens mean distributed vulnerability, more places to intercept, more services holding auth state, more surface area to audit. Gemini countered that a centralized session store is a single point of failure.
+
+Fair point. But a centralized store is a single point of failure you can see, monitor, and make resilient. JWTs hide the failure point. Token reissuance still depends on a centralized authority, it just fails in less obvious ways, and less obvious failures are worse failures. My approach is simple: find what sucks about your system and do it more. Use it more, deploy it more, stress it more. If centralized auth is the bottleneck, make it the most resilient piece of your infrastructure. Don't distribute the complexity to avoid dealing with it. Don't hide behind the suck.
+
+Gemini didn't back down. But I came out of that conversation more confident in my architecture than I was going in, because it had been pressure-tested by something that knew every counterargument in the literature.
+
+That kind of conversation is something I used to have with other senior engineers. The good ones, who would actually challenge your thinking instead of just nodding along. Those conversations were rare because they required finding someone with the right expertise, the right disposition, and the time to actually engage. Now I can have that argument at midnight on a Tuesday.
+
+## Scaling the debate
+
+When I'm making a decision with real consequences, I want it attacked from multiple angles.
+
+So I built a workflow for it. I have Claude write a script that sends the proposal to multiple foundation models through Bedrock, each one asked to find the flaws. Each model has its own blind spots and tendencies. One might focus on operational complexity, another on security implications, another on developer experience. I collect the criticism, evaluate what's worth taking seriously, and adjust.
+
+It's not perfect. The models sometimes converge on the same objections, or miss things that anyone with real operational experience would catch immediately. But as a first pass at pressure-testing an idea before committing to it, it's useful. And it only works if you've built enough systems to know which criticism matters and which doesn't. The models can generate the objections. Evaluating them still takes a human operating system that was built the hard way.
+
+## What this actually is
+
+This feels different from the productivity conversation everyone else is having about AI. "I built X in Y hours" is impressive, but it misses the point. The hours aren't what changed. What changed is what I spend those hours doing.
+
+Before AI, maybe 20% of my time on a project was the part I loved: thinking through the system, debating architecture, solving hard design problems. The other 80% was implementation. Necessary, but not where the joy was.
+
+That ratio has flipped. Now most of my time goes to architecture, design, and evaluation. The implementation still happens, it just doesn't require me to be the one writing it line by line. I'm directing, reviewing, course-correcting. But my brain gets to stay in the creative layer where I do my best work.
+
+This isn't a productivity story. It's a story about what engineering actually is when you strip away the drafting.
+
+I think a lot of senior engineers are about to discover this, if they haven't already. The thing you loved about this career, the systems thinking, the problem-solving, the architectural debates that sharpen your ideas, that's the whole job now. And the part you tolerated, the implementation grind, is becoming optional.
+
+For the first time in a long time, I'm having fun.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
