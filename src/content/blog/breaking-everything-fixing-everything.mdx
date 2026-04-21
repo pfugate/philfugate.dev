@@ -1,0 +1,112 @@
+---
+title: "The Technology That's Breaking Everything Might Be the Only Thing That Fixes It"
+description: "AI's unit economics are broken, and making models dumber won't fix them. The real bottleneck is power. Solving it might accidentally fix everything else too."
+date: 2026-04-17
+tags: ["ai", "energy", "fusion", "climate", "hot-takes"]
+---
+
+## The $115 billion problem
+
+OpenAI is projected to lose $14 billion this year. Cumulative losses through 2029 are tracking toward $115 billion. They burn roughly $2 for every $1 they earn on inference. Their gross margins have been collapsing, not improving, dropping from 40% to 33% as usage scales up.
+
+Anthropic is in better shape, targeting positive cash flow by 2027 and spending about 4x less than OpenAI to train comparable models. But even they've hit capacity constraints that forced real tradeoffs in their product, which I'll get to in a minute.
+
+Google can absorb the losses through advertising revenue. Everyone else is running on venture capital and prayer.
+
+The broader numbers are even wilder. The four largest hyperscalers have guided $635-665 billion in capital expenditure for 2026 alone. Sequoia Capital has been asking what they call "the $600 billion question": AI companies need roughly $2 trillion in annual revenue by 2030 to justify the infrastructure being built right now. Actual AI industry revenue today is around $100 billion. That's a 20x gap between what's being spent and what's being earned.
+
+To put the spending in perspective, 2026 hyperscaler AI capex is roughly 20% of the UK's entire GDP. And it's growing.
+
+## You can't un-ring the bell
+
+When the economics don't work, companies have two options: charge more or spend less. Charging more is off the table because the entire industry is in a race to the bottom on pricing, with LLM costs dropping roughly 10x per year. So the pressure goes the other direction: spend less, reduce inference costs, make the models do less work per request.
+
+Anthropic tried this, and it went badly.
+
+In February 2026, they introduced "adaptive thinking" for Opus 4.6, letting the model dynamically decide how much reasoning to apply to each request. On March 3rd, they silently changed the default effort level from "high" to "medium." The intention was probably reasonable, they'd gotten feedback that the model was consuming too many tokens on simple tasks, and reducing the default would save compute across millions of requests.
+
+The problem is that complex tasks suffered immediately, and the people paying $200 a month for the Max plan were not using Claude for simple tasks.
+
+Stella Laurenzo, a Senior Director of AI at AMD, filed a GitHub issue with data from 6,852 Claude Code sessions, and the numbers were damning. Median thinking depth had dropped 67%. The ratio of file reads to edits collapsed from 6.6 to 2.0, meaning the model went from researching before writing to just writing. "Should I continue?" bail-outs appeared 173 times in 17 days after being nonexistent before, while self-contradictions tripled and hallucinations spiked.
+
+The issue got over 1,060 upvotes, Fortune ran a piece on the backlash, and Anthropic declined to comment on the record.
+
+And the cruelest detail: the lower quality output caused users to retry requests at massively higher rates. One user's estimated costs went from $345 per month to $42,121 per month because of the 80x increase in retries. The cost-cutting made things more expensive for users, not less.
+
+I'm not here to pile on Anthropic. I use Claude every day and I've built a production platform with it. I don't think the decisions they've made were good ones, but I do think the situation is untenable. You can't make the model dumber without users noticing, and you can't keep running it at a loss forever.
+
+The cat is out of the bag. Users know what good looks like because they've experienced the Ferrari, and you can't hand them a Civic and tell them it's the same car.
+
+## The wrong problem
+
+Everyone in AI is trying to solve the cost problem by making inference cheaper. Smaller models, distillation, routing to cheaper models for simpler tasks, reducing reasoning depth. And some of that work is genuinely valuable. But it's optimizing at the margins of a fundamentally broken equation.
+
+Chips can be amortized over time and models get more efficient with each generation, but electricity is an ongoing cost that scales linearly with usage. It's the single largest factor that can't be engineered away with better algorithms.
+
+The International Energy Agency projects that global data center electricity consumption will exceed 1,000 terawatt-hours by the end of 2026. That's equivalent to Japan's entire national electricity consumption. As of April 2026, roughly half of all planned US data center builds this year have been delayed or cancelled, not because of a shortage of capital or demand, but because the electrical grid can't support them.
+
+U.S. utilities are planning $1.4 trillion in spending through 2030 just to build out power infrastructure for AI data centers. The demand isn't slowing down. AMD's CEO has projected that 5 billion people will be using AI by 2030, requiring 10 yottaflops of compute power. The grid we have now isn't even in the same ballpark.
+
+The cost crisis in AI isn't a model problem, it's a power problem. And you don't solve a power problem by making the models dumber.
+
+## The fastest nuclear reform in 70 years
+
+In May 2025, the White House signed four executive orders targeting a quadrupling of U.S. nuclear energy capacity to 400 gigawatts by 2050. The orders directed the DOE to designate AI data centers as critical defense facilities and authorized advanced reactor deployment outside the traditional NRC framework. Eleven pilot reactor projects were selected, with a goal of achieving criticality by July 4, 2026.
+
+On March 25, 2026, the NRC approved a new risk-informed, technology-inclusive regulatory framework for licensing commercial nuclear plants. This is the first new set of reactor licensing regulations since 1989 and the first major update to licensing standards since 1956. It covers small modular reactors, microreactors, and advanced non-light-water designs.
+
+The tech companies aren't waiting around either. Microsoft signed a 20-year power purchase agreement to restart Three Mile Island Unit 1. Google signed a deal with Kairos Power for small modular reactors. Amazon invested in X-energy and purchased a nuclear-powered data center campus near the Susquehanna plant. OpenAI is in talks to buy 5 gigawatts from Helion Energy by 2030, scaling to 50 gigawatts by 2035.
+
+This isn't coincidence. Half of all planned US data center builds in 2026 have been delayed or cancelled because the grid can't feed them, and that's hundreds of billions in stalled investment. When that kind of money hits a wall, it doesn't wait for the wall to move. It funds the demolition. AI companies are directly lobbying for regulatory reform, directly investing in energy startups, and directly signing power purchase agreements that give fusion and fission companies the guaranteed demand they need to build. The crisis is creating the solution.
+
+And the OpenAI-Helion deal is worth pausing on, because Helion isn't a fission company. They're a fusion company. The connection between AI and fusion is where this story gets genuinely exciting.
+
+## The virtuous cycle
+
+Fusion has been "30 years away" for decades, and the jokes write themselves. But something has changed in the last few years, and AI is a big part of why.
+
+The core challenge of fusion has always been controlling plasma. You're containing matter at hundreds of millions of degrees inside a magnetic field, and the plasma is constantly trying to destabilize in ways that are too fast and too complex for traditional control systems to manage. The physics is well understood. The engineering of controlling it in real time was the bottleneck.
+
+In 2022, Google DeepMind and EPFL trained a deep reinforcement learning agent entirely in simulation, then deployed it to control plasma in a real tokamak in Switzerland. A single neural network replaced 19 separate hand-tuned magnetic coil controllers, and it worked. [Published in Nature](https://www.nature.com/articles/s41586-021-04301-9).
+
+In 2024, a Princeton team [published in Nature](https://www.nature.com/articles/s41586-024-07024-9) showing that deep reinforcement learning could predict and avoid tearing instabilities, one of the most dangerous types of plasma disruption, 300 milliseconds in advance and steer the plasma along stable paths in real time.
+
+At Lawrence Livermore, AI agents are now automating inertial confinement fusion target design on supercomputers. Their physics-informed deep learning model predicted the probability of the NIF ignition shot at 74% before it happened, and the actual result fell within the predicted range. [Published in Science](https://www.science.org/doi/10.1126/science.adm8201). LLNL's latest ignition experiment in 2025 hit 8.6 megajoules of yield with a target gain of 4.13, and the records keep falling.
+
+Commonwealth Fusion Systems is building SPARC with an AI-powered digital twin developed in partnership with DeepMind, Nvidia, and Siemens. The first of 18 toroidal field magnets is installed, first plasma is targeted for 2027, and they're projecting a commercial power plant by the early 2030s.
+
+The World Economic Forum published a piece in January 2026 explicitly framing this as a self-reinforcing cycle: "We must power AI so that AI can help modernize the grid and speed commercial fusion, which, in turn, is what will ultimately sustain AI's own electricity use."
+
+The technology that consumes the most power might be the technology that solves the power problem, and that's not a hope. It's already happening in labs and reactors around the world.
+
+## Bigger than AI
+
+The implications of solving the power problem go way beyond making Claude cheaper to run.
+
+We've spent 50 years approaching the climate crisis primarily through reduction: use less energy, consume less, shrink our footprint, ban plastic straws. And despite all of that effort, despite 800 gigawatts of new solar and wind installed last year alone, global CO2 emissions hit a record 37.2 gigatons in 2025 and they're still rising. The 1.5 degree carbon budget is, according to the researchers tracking it, "virtually exhausted."
+
+Renewables are growing faster than ever, and it's still not enough to offset the growth in global energy demand. We're running hard just to stand still.
+
+The problem with the reduction approach is that it asks 8 billion people to voluntarily use less of the thing that makes modern life possible. And even when wealthy nations manage to reduce, developing nations are industrializing, which they have every right to do. Global energy demand keeps growing because human progress requires energy. That's not going to change.
+
+What can change is where the energy comes from and what it costs.
+
+Consider what cheap, abundant energy actually unlocks. Direct air carbon capture works but costs $400 to $1,500 per ton because each ton requires 1,500 to 2,000 kilowatt-hours of electricity. Desalination works but only 1% of plants run on clean energy because the power costs dominate. Plasma gasification can break waste down to molecular components, no toxins, no ash, no landfill, but it costs $170 per ton when a landfill costs $35, and the gap is almost entirely energy. AI itself works, as we've covered, but not at the scale humanity needs when the companies building it lose $2 for every $1 they earn.
+
+Energy is also embedded in the price of everything you buy. Nearly 30% of food manufacturing costs are energy. U.S. electricity bills rose 7.1% in 2025, more than twice the rate of inflation, and low-income families feel it at roughly 3x the rate of high earners. Cheap energy doesn't just fix AI. It makes carbon capture viable at scale, desalination deployable anywhere, landfills obsolete, manufacturing local, and the cost of living survivable.
+
+These aren't separate problems. They're all the same problem.
+
+Ezra Klein and Derek Thompson call it the "abundance agenda," the idea that the answer to our biggest challenges isn't building less but building more, just building it clean. AI's economic crisis is about to make that argument undeniable, at least for energy. The AI industry has a few hundred billion dollars worth of motivation to make electricity cheaper, and that kind of money builds reactors.
+
+And if fusion works, if the timeline holds and commercial fusion starts coming online in the early 2030s, the beneficiaries won't just be AI companies trying to shave their inference costs. It will be the people of Flint, Michigan who are still buying bottled water in 2026. It will be every human on the planet who deserves clean water, breathable air, and a future that isn't defined by scarcity.
+
+The industrial revolution didn't solve its energy problem by using less steam. It built better engines. Those engines needed more coal, which led to better mining techniques, which led to more accessible energy, which powered more industry. The cycle fed itself until the cost of energy transformed from a constraint into an enabler.
+
+Don't make Claude dumber. Don't shrink the models. Don't hide behind the suck.
+
+Build for abundance.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
