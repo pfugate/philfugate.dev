@@ -1,0 +1,128 @@
+---
+title: "My Laptop Wouldn't Boot. Four Hours Later I Open-Sourced the Backup System."
+description: "I almost lost a month of private code. Four hours later, I had built, deployed, restored from, and open-sourced an encrypted Git backup system."
+date: 2026-08-27
+tags: ["ai", "rust", "git", "aws", "open-source"]
+---
+
+Today I almost lost a month of work.
+
+I've spent most of my evenings for the last month working on a project that I'm not ready to release yet. The code has stayed on my laptop because I wasn't ready to put it on GitHub, even in a private repository.
+
+You can probably see where this is going.
+
+This evening, my laptop started acting strangely. Nothing dramatic, just strange enough that I decided to restart it.
+
+It didn't come back.
+
+The machine hung on the startup screen. I waited, forced another restart, and watched it do the same thing again. I tried safe mode. No luck. I booted into recovery, opened a terminal, and started looking for my files.
+
+They weren't there.
+
+That was when the panic started.
+
+A month of nights and weekends. Thousands of lines of code. All of it sitting on a drive that, at that moment, appeared to have disappeared.
+
+I started asking Gemini whether there was any way to recover the data. It suggested that the drive was probably still there but hadn't been mounted in the recovery environment.
+
+It was right.
+
+I mounted the drive, found my files, connected an external SSD, and copied every repository off the machine before doing anything else.
+
+After another hour or so of troubleshooting, the laptop finally booted normally. Everything was there. Nothing was corrupted, and no code was lost.
+
+I got lucky.
+
+I didn't want to rely on that happening again.
+
+## Why not just use GitHub?
+
+The obvious answer is to push everything to GitHub.
+
+That is what I do with most of my code. GitHub is good at this, private repositories exist, and keeping the only copy of important work on one laptop is a terrible idea.
+
+But I'm not ready to put these projects on someone else's infrastructure yet. I wanted the primary remote to be hardware I control.
+
+Copying the repositories to my NAS would protect me if the laptop died, but then the NAS would become another single point of failure. I needed an offsite copy too.
+
+A normal S3 backup still left me with a problem. If the NAS held AWS credentials that could read and delete its backups, compromising the NAS could compromise the backups along with it.
+
+I wanted the NAS to be able to create a backup without being able to retrieve, decrypt, or delete one.
+
+So I dug out my NAS, plugged it in, sat down with Claude, and wrote this:
+
+> We need to build a Rust tool that can intercept Git pushes to my remote NAS, automatically create the repository, and push an encrypted copy of that repository to S3. I'm working on projects that I'm not ready to put on GitHub, and my near-data-loss scare tonight means I need to fix this now.
+
+After a few rounds of back-and-forth, that became [Git Ark](https://github.com/boomctl/git-ark).
+
+## What Git Ark does
+
+Git Ark turns a Linux machine you can reach over SSH into a simple Git host. It can be a NAS, a VPS, or an old computer sitting in a closet.
+
+From my laptop, adding a repository looks like this:
+
+```bash
+git remote add ark git-ark:my-project
+git push ark main
+```
+
+There is no web interface and no separate repository setup. The first push creates the bare repository automatically.
+
+Git Ark runs as a forced SSH command behind a dedicated key. That key can perform the Git operations needed to push and clone repositories, but it cannot open a normal shell on the host.
+
+After a push reaches the NAS, a Git hook starts the backup process. Git Ark creates a complete `git bundle` containing the repository and its history, encrypts it with `age`, and uploads it to S3.
+
+The NAS only has the public encryption key. The private key stays on my trusted machine, so the NAS cannot decrypt the bundles it creates.
+
+Its AWS credentials are similarly limited. They allow `s3:PutObject` and nothing else. The NAS can write a new encrypted bundle, but it cannot read existing bundles, list the bucket, or delete anything. S3 versioning keeps previous copies when the latest bundle is replaced.
+
+If the laptop dies, the repository is still on the NAS. If the NAS dies, the encrypted bundle is still in S3. Losing either one no longer means losing the code.
+
+## A backup has to restore
+
+An upload completing successfully does not prove that a backup works.
+
+Before moving the rest of my repositories, I tested the full restore path. From a machine holding the private `age` key and separate S3 read credentials, Git Ark downloaded the encrypted bundle, decrypted it, and rebuilt the repository.
+
+The files were there. The branches were there. The commit history was there.
+
+Then I pushed the rest of my private repositories to the NAS.
+
+## Per-repository policy
+
+Not every branch needs to be backed up forever, and not every repository needs to go anywhere near GitHub.
+
+Git Ark lets each repository declare its policy in a committed `.git-ark.yml` file:
+
+```yaml
+backup_refs:
+  - main
+  - big-feature
+
+github:
+  enabled: true
+  visibility: private
+  owner: your-github-org
+  branches:
+    - main
+```
+
+`backup_refs` controls which branches receive the encrypted S3 backup. The optional `github` section controls whether selected branches are also mirrored to GitHub.
+
+If the GitHub section is missing, nothing is sent to GitHub. Mirrors are private by default. Publishing a repository publicly has to be stated explicitly in that repository's policy.
+
+That gave me a way to keep my unreleased projects on the NAS and in encrypted S3 storage while allowing projects I was ready to release to move to GitHub automatically.
+
+## Four hours later
+
+Git Ark did not exist when I sat down.
+
+Four hours later, it was running on my NAS. My private repositories were stored there as real Git remotes, important pushes were being encrypted and copied to S3, and I had restored one to prove that the entire process worked.
+
+The first repository I chose to release through the GitHub mirroring path was Git Ark itself.
+
+I pushed Git Ark to the NAS.
+
+Git Ark created its own encrypted backup and published its source to GitHub.
+
+[Git Ark launched Git Ark.](https://github.com/boomctl/git-ark)
