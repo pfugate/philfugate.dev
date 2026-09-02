@@ -1,0 +1,135 @@
+---
+title: "I Built a Recommendation Algorithm for One User. She's Two."
+description: "AI let me build a safer, self-hosted kids' TV system for one very particular user in less than 48 hours. That changes what personal software can be."
+date: 2026-09-01
+tags: ["ai", "engineering", "parenting", "self-hosting", "recommendation-systems"]
+draft: false
+---
+
+My daughter loves a video of dogs playing in a swimming pool.
+
+Not dog videos broadly. Not everything from the channel that uploaded it. That video. Dogs, in a pool.
+
+We found it on YouTube, because yes, my two-year-old watches YouTube.
+
+Don't judge me.
+
+I know the arguments about screen time and infinite feeds. I also live in the real world, where dinner has to get made, adults occasionally need twenty quiet minutes, and sometimes my daughter really wants to watch dogs play in a swimming pool.
+
+I also do not believe all children's television is bad. Some of it is genuinely wonderful. We love slower, low-stimulation shows like Little Bear and Little Nutbrown Hare because they tell gentle stories, model kindness, and give her room to follow what is happening. She picks up words, ideas, and little lessons from them.
+
+The problem was never the video we chose. It was what came next.
+
+Every time we put something on, I had to watch the upcoming recommendations and be ready to skip or route around them. A fun run of Super Simple Songs could turn into a hypervigilant watch for Cocomelon. Pressing Play was the beginning of a content-moderation shift.
+
+So I built Kids TV.
+
+It is a private Apple TV app for my family, backed by a small Rust service on my NAS and a parent console on my phone. The repository is called `no-more-cocomelon`, which started as a joke and ended up being a pretty good product brief.
+
+Now I can relax while a video plays. I know the next one is something I am okay with her watching because every path into the queue follows rules I chose. I am still making the parenting decision. I just do not have to remake it every three minutes.
+
+The interesting part of the project is not how a video gets onto the screen. It is what the system is allowed to do once it gets there.
+
+## Less than 48 hours
+
+Kids TV did not exist on Saturday afternoon.
+
+Less than 48 hours later, I had a working native Apple TV app, a Rust backend running on my NAS, a phone-based parent console, a recommendation engine, search, favorites, queue management, and the safety controls my family needed.
+
+That was only possible because of AI.
+
+AI handled most of the implementation. I defined the system, made the architecture decisions, reviewed the work, tested it on the actual hardware, and kept turning what I observed into better rules. It could build the queue I described. It could not tell me what the rules should be.
+
+Without AI, this would have been one of those projects I designed in my head, estimated at a few months of evenings, and never started. The value to my family is enormous. The economic value is zero. Traditional software economics make that a bad project.
+
+AI changed the economics. It gave me enough leverage to put a protective layer between my daughter and one of the largest recommendation systems in the world. It did not make the parenting decisions for me. It made it possible to encode those decisions in software built specifically for her.
+
+Getting the first version onto the television was only the beginning. Once we started using it, the assumptions I had built into it became visible very quickly.
+
+## A play is not permission
+
+The dogs-in-a-pool video exposed the first one.
+
+One tap put six more videos from the same publisher into a twenty-deep queue. Nobody had chosen those videos. Nobody had approved the channel. My system saw one good result and quietly promoted the entire source.
+
+That was exactly the behavior I built Kids TV to prevent. My first version did it anyway.
+
+The fix started with a simple distinction: playing something and approving it are different actions.
+
+A new video can now play and remain searchable without entering the recommendation pool. When it ends, the TV asks one question:
+
+> Keep this one?
+
+"Not this one" has focus by default, so a stray press writes nothing. Choosing "Keep it" means the video can show up on its own later.
+
+Playing means play this. Keeping means I trust this enough to recommend again. Those should have been different verbs all along.
+
+That solved the individual video, but not the publisher behind it. A hard whitelist would be safe, but it also would have blocked the dogs-in-a-pool video because its channel was new to us. I wanted to preserve discovery without letting one good result vouch for an entire catalog.
+
+So publisher trust is gradual. The video a person explicitly chooses gets through. Everything else from an unfamiliar publisher starts with a ranking penalty and sits near the tail of the queue. If my daughter keeps returning to one of its videos, the penalty shrinks and the publisher earns room to suggest more.
+
+The threshold came from her actual history. Her most-played videos had 12, 7, 6, 4, 4, and 4 plays, followed by a long tail of ones and twos. Five replays was the natural line between "this came on" and "she loves this."
+
+That is not a universal recommendation constant. It is a value judgment for one household, backed by the behavior of the person sitting on the couch.
+
+Once trust became a gradient instead of a gate, the next problem was deciding how it should interact with everything else the queue knew.
+
+## The queue is the product
+
+My first queue builder was a cascade. It looked for the same show, then the search phrase, then the publisher, then a related theme, then title words, then anything left. As I added length limits, repetition caps, and exceptions, rules that made sense alone started fighting each other.
+
+A never-played episode from the same show always beat an eleven-play favorite. A hard length filter could leave the queue half empty. A publisher cap stopped one source from taking over, but also cut a seven-episode run of Little Bear off after three.
+
+So I replaced the cascade with a score. Same-show matches get the strongest pull, followed by the deliberate search phrase and related themes. Publisher, play count, title overlap, and similar length contribute smaller amounts. Recently watched videos and unearned publishers get penalties rather than hard exclusions, so a small library can still produce a full queue.
+
+The numbers are configurable because they are taste, not truth. The API can also return the score breakdown for every item, so when something strange appears I can see exactly why it beat the alternative. I did not want magic. I wanted a system that could show its work.
+
+Choosing the right videos was only half of making the queue trustworthy. It also had to behave like a queue.
+
+The TV originally rebuilt everything that came next after every video. Recommendations stayed fresh, but the line moved constantly. Something two spots away could disappear before we reached it. Opening the next-up strip twice could show two different futures.
+
+A queue is a promise about what happens next.
+
+Now it stays fixed for the life of a playback session. When only two videos remain, the app asks for more and appends them at the end. Nothing already visible gets reordered. The strip includes what already played as well as what is coming, so Previous actually means the previous video.
+
+The system sacrifices some freshness, but it no longer moves the floor under her feet. That is the right trade.
+
+## Safe by construction
+
+That same predictability runs through the rest of the app. Building for a two-year-old changes what "safe default" means because she cannot read, but she can absolutely press the button that already has focus.
+
+The hide confirmation focuses "Keep it," never "Hide it." The prompt that decides whether something can enter the library focuses "Not this one," never "Keep it." Hiding a whole publisher is separated from hiding one video because those actions have very different consequences.
+
+Search has two scopes. The kid-facing search only queries the local library. It is not a filtered view over a broader result set; the endpoint has no code path that can return something outside the collection. Broader discovery is enabled from the parent console on my phone, because entering a passcode with a television remote is miserable and the parent is already holding the better input device.
+
+After twenty videos advance without anyone touching the remote, playback pauses on a big "Still watching?" button. A bar drains for two minutes and then the app stops. There is no metric in this system that improves when the television plays to an empty room.
+
+Even the AI classifier has a narrow job. It can file a video under a show, attach themes, or flag something odd for review. It does not decide what the family approves. The machine files. A person decides.
+
+None of these safeguards is especially complicated. The dangerous behavior in most software is rarely one obviously evil feature. It is a hundred defaults that all lean in the same direction.
+
+Large products have to choose defaults that work well enough for millions of people. I could choose defaults for the one person actually using mine.
+
+## The minimum viable audience is one
+
+This is the part that feels bigger than a kids' TV app.
+
+Software has always been expensive enough that it needed an audience. Even open-source projects have to generalize enough to attract users, contributors, or someone willing to maintain them. That shaped self-hosting too. We install software somebody else built, connect it to three other generalized tools, and bend our needs around their assumptions. We own the hardware and the data, but rarely the product decisions.
+
+AI changes that.
+
+An experienced engineer can now build the missing layer: not another generic platform for ten thousand hypothetical users, but the exact software a household, workshop, school, or small community needs, running on hardware they control and expressing values they chose deliberately.
+
+The minimum viable audience can be one family. A piece of software can be economically irrational and personally priceless. The big platforms will never build a recommendation system tuned to one two-year-old, because of course they won't. I can. And now I can do it in a weekend.
+
+But only if I use the leverage. AI will happily recreate the same centralized products, engagement mechanics, and defaults we already have. It did exactly that in my first queue. The opportunity is not to make the old thing faster. It is to make something that was never economically possible before, then bring enough judgment to make it genuinely yours.
+
+The code became cheap. Knowing what should exist did not.
+
+I did not build Kids TV because I wanted the smartest possible recommender. I wanted one whose values I could see, argue with, and change.
+
+She chooses one video. The system remembers one video. If she keeps choosing, trust grows. If someone says no, no is remembered. If nobody is watching, it turns itself off.
+
+It is less magical than the algorithm it replaced.
+
+That is why I trust it.
