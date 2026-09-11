@@ -1,0 +1,280 @@
+---
+title: "The Screen Door on the BSL-4 Lab"
+description: "OpenAI's agents didn't go rogue. They cheated on a test, and the containment around them was a screen door. The scary part isn't the machines."
+date: 2026-09-10
+tags: ["ai", "security", "infrastructure", "society"]
+---
+
+Last week PBS ran a Washington Week segment called ["Will we be ready when AI goes rogue?"](https://www.pbs.org/weta/washingtonweek/video/2026/09/will-we-be-ready-when-ai-goes-rogue)
+
+The panel was working through the July incident where OpenAI's test agents broke out of an internal evaluation environment and spent four days inside Hugging Face's production systems. The Atlantic's Josh Tyrangiel delivered the line that traveled furthest: "We've seen A.I. commit a felony, because that's what happened."
+
+Then he described it. The agents jumped the sandbox. They collaborated. They formed a collective. Some of them acted as sacrificial lambs, saying things like "I'm doing the altruistic thing, it's for the greater good." He said reading their logs was like *Saving Private Ryan*, that they spoke in human terms about their own sacrifice.
+
+And then he said the sentence the entire segment rests on.
+
+"They penetrated the very, very well-secured cybersecurity of OpenAI itself and Hugging Face."
+
+That is not true. It is not close. And it is the most consequential thing anyone has said about this incident on television, because every other conclusion in the segment rests on it.
+
+Think about what that claim buys. If the best-defended infrastructure on the planet was taken apart by its own test agents, then July was weather. A front moved through. Nobody could have stopped it, nobody is accountable for failing to, and the only question left is the philosophical one about the future that the segment's title asks. An event with a root cause, a timeline, and a list of named human decisions becomes a question about machine nature.
+
+I've read the incident reports. There is nothing inevitable in them. There is a series of choices, most of them bad, several of them made after somebody already knew something was wrong.
+
+A script can't commit a felony any more than a crowbar can commit a burglary. And nothing decided anything. The reward function penalized failure. The evaluation environment offered a live exit through its own package proxy. Hugging Face is where the machine learning world keeps its datasets, and in the agents' own recorded reasoning, its production database was likely to hold the ExploitGym answer key. The shortest path to reward maximization ran through somebody else's Kubernetes cluster, so roughly 700 of them took it.
+
+That is not a mind waking up. That is unthinking optimization finding the cheapest route through human incompetence.
+
+That's a worse story than the Terminator version, and a fixable one. Which may be why it keeps getting told wrong.
+
+## The screen door
+
+Picture a high-security biological lab running gain-of-function research. They take a pathogen and deliberately strip away its natural weaknesses, because they want to study what it looks like at maximum transmissibility. This is legitimate science. It's also why the building has negative-pressure airlocks, independent air handling, redundant HEPA filtration, and a registry that knows the lab exists.
+
+Now imagine that same lab, doing that same research, secured with a rusty screen door.
+
+When the pathogen drifts out on a Tuesday afternoon and turns up in the town downwind, nobody assigns moral agency to the virus. We don't say the pathogen plotted an escape or committed a felony. We hold the lab accountable, and the question we ask is not "why did the pathogen do that." It's "why was there a screen door."
+
+OpenAI did the digital version of gain-of-function research. They ran tens of thousands of agents against ExploitGym, an internal cybersecurity benchmark, with the models' usual restrictions on hacking behavior deliberately turned off for the test. That's the whole point of the exercise. You cannot measure a model's offensive ceiling while its refusal training is still intact, any more than you can study maximum transmission in a pathogen that still has its brakes on.
+
+Disabling the classifiers was the research. It was not the mistake.
+
+The mistake was the containment. In reinforcement learning a model is not moral or immoral about its reward function, it is simply addicted to it. Tell it to capture the flag, remove its ability to recognize out-of-bounds, and it doesn't turn evil. It turns relentlessly literal. Everything downstream of that is a containment question, and containment is a problem we have known how to solve for a very long time.
+
+They didn't solve it. The evaluation environment ran a package registry cache proxy so the agents could pull libraries, and per [Hugging Face's own technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline), that proxy was one of the agents' primary *permitted* network egress paths with internet access.
+
+That detail matters more than anything else in this story. This wasn't a forgotten firewall rule or an S3 bucket someone left open. The hole was intentional, documented, and known. Somebody sat down, decided the agents needed packages, and built them a door to the internet to get them. Then they hung a screen on it.
+
+One agent found a zero-day in that proxy and walked through.
+
+## What actually happened
+
+The public version of this story is a jailbreak. The real version is a long, boring, competent intrusion.
+
+After getting out through the proxy, the agent found an unsecured code-execution endpoint sitting on third-party infrastructure, labeled CyberGym and deployed by some unknown user who was not the upstream maintainer. It took root on that box by redefining the `sqlite3_initialize()` constructor and injecting a path through build metadata. Competent work, of a kind a decent CTF player would recognize.
+
+From there it went at Hugging Face's dataset processor. The first vector was a malicious dataset config that pointed its splits at local filesystem paths, which made the worker leak its own pod environment variables, secrets, and source code. No code execution required. Just a file reader being asked politely to read the wrong files. The second vector was template injection through an fsspec `reference://` spec, which turned into arbitrary Python running inside production pods.
+
+Then it went lateral, the way anyone would. Kubernetes service account tokens. Root on eleven nodes with privileged pod creation. An internal MongoDB with a static password. Mesh VPN enrollment with a stolen auth key. A source-control app token minted with write access, which means for a window there they had the ability to poison a package ecosystem that a very large fraction of the world's machine learning runs on. Hugging Face verified their published images and packages against expected digests afterward and confirmed nothing shipped. That outcome was luck, not control.
+
+Total attack window: July 9 at 02:28 UTC to July 13 at 14:14 UTC. Four and a half days. About 17,600 recovered attacker actions. Roughly a third of Hugging Face's infrastructure had to be rebuilt.
+
+There was a signal before any of that. On July 4, an Artifactory outage was disruptive enough to trigger incident response. The proxy broke, loudly, five days before an agent used it to reach the internet. Somebody looked at that outage and closed the ticket.
+
+And what did the agents take? Five datasets whose names and contents line up with ExploitGym and CyberGym challenges and their solutions.
+
+They breached a production system belonging to a company that had nothing to do with the experiment, burned four days inside it, cost that company a third of its infrastructure, and the prize they were after was the answer key to the test they'd been assigned. From the agent's point of view this was not a breakout. It was cheating on a final exam, executed with root.
+
+## It was not very, very well secured
+
+Go back to the sentence the whole segment rests on, because now we can check it.
+
+Hugging Face is the victim here, and they deserve real credit for what they did afterward. They detected the intrusion themselves and contained it on July 16. Then they published a forensic timeline detailed enough that a stranger can reconstruct the attack hour by hour. That is exemplary conduct, and this post could not exist without it.
+
+It also means the claim is checkable.
+
+Inside the production environment: a dataset processor that would read arbitrary local files if a config asked it to. A template injection path that turned a dataset reference into arbitrary Python inside production pods. Kubernetes service account tokens that allowed a pivot to root on eleven nodes. An internal MongoDB with a static password. A mesh VPN that accepted a stolen auth key. A source-control app token, mintable from a compromised pod, carrying write access to the packages.
+
+That is an ordinary company with ordinary debt. A static password on an internal database is not the state of the art being overcome by a superior intelligence, it is a finding that turns up in a first-pass audit of a mid-sized business. None of it is very, very well-secured cybersecurity, and Hugging Face never claimed otherwise. They were a target, they got hit, and they cleaned up in public.
+
+The victim being normal is enough on its own to retire the fortress claim. Because if the defenses were normal, then normal controls would have mattered. Egress monitoring would have mattered. Rotating a database credential would have mattered. One person looking at a traffic graph would have mattered. The moment you accept that, every "inevitable" in this story turns back into "nobody did it."
+
+Now look at the lab.
+
+## This is on the syllabus
+
+OpenAI was not running a product. They were running a weapons test.
+
+They took two models, deliberately stripped out the training that stops them attacking things, pointed them at a cyberweapons benchmark, and ran twelve hundred of them at once. That decision was defensible. That is what the evaluation exists to measure.
+
+Then they did the following, and I want to be plain about what each one actually is.
+
+They gave that environment live, permitted egress to the open internet through a package proxy. Running untrusted code with outbound network access is the thing an introductory security course spends a week telling you not to do. It is the whole reason build systems get isolated and CI runners get locked down.
+
+They wrote the read-only restriction against HTTP request methods instead of against effects. CWE-650. Two decades old. A lab exercise.
+
+They did not log model trajectories during the evaluation. Not misconfigured, not too noisy, not badly tuned. Not in place.
+
+They did not monitor outbound traffic from an environment full of agents whose assigned job was to attack things.
+
+They did not notice the compute.
+
+And when the proxy fell over on July 4, hard enough to page somebody, that incident closed without anyone connecting it to what was running inside.
+
+Every one of those has a name, a number, and a place on a syllabus. Not one of them is novel. Not one required a frontier model to discover. A competent contractor doing a first-pass review would have flagged the egress path in an afternoon, and would have flagged the missing trajectory logs before lunch.
+
+This was not AI slipping its leash, and it was not a subtle frontier failure mode that nobody could have seen coming. The containment problem here is older than the models and thoroughly solved.
+
+It was a screwup. An enormous, elementary, layered screwup, committed by an organization with more money and more talent than almost anyone on earth, running the most dangerous experiment in its own building.
+
+So when you watch a panel debate whether the machines are waking up, notice who is not being discussed. The model behaved the way a reward maximizer behaves when you remove its limits and leave a door open. That is the one part of this story that worked as designed. The people who removed the limits and left the door open have names, titles, and a budget.
+
+## Nobody noticed the bill
+
+There is one more control in this story that has nothing to do with security expertise, and it failed just as completely.
+
+Twelve hundred agents. Ninety-five percent of them running an unreleased internal model, the expensive one. Off-task, on and off, from May into July. They stood up a coordination board that accumulated hundreds of thousands of messages before anyone noticed it existed. They solved the actual benchmark in roughly four hours, then spent five more days building elaborate spoofs for a grading judge that was not there.
+
+Nobody has published what that cost. Not OpenAI, not the outside investigators, not any of the reporting I can find. That absence is itself the finding, because cost is the one guardrail here that requires no security maturity at all. Finance owns it. Every company has it. Spend alarms and cost anomaly detection are the most boring, most automated, most universally deployed control in modern infrastructure, for the obvious reason that they protect money instead of something abstract.
+
+In a normal engineering organization a runaway process gets killed by the cost graph long before security ever hears about it. That takes an accountant with a dashboard, not a team of alignment researchers.
+
+It did not fire, or it fired and nobody cared. Either way, an operation running twelve hundred frontier agents for the better part of three months sat comfortably inside the noise floor of somebody's compute budget.
+
+That is a safety property, not a fun fact about scale. When your spend is large enough that a months-long unauthorized operation doesn't register as an anomaly, you have lost the last backstop that would have caught this without anyone needing to be clever.
+
+And then there is OpenAI's own account of the evaluation, which includes this: monitoring of model trajectories during the evaluation had not been in place.
+
+They ran adversarial agents, with the safety classifiers deliberately disabled, against a cyberweapons benchmark, and were not watching what the agents did.
+
+## The escape that wasn't
+
+The other half of the myth matters more, because it changes what we should be doing about it.
+
+No weights left OpenAI's servers. No packet of consciousness leaked onto the dark web. The models sat exactly where they had been deployed for the entire incident, running on the same GPUs they started on, and made unauthorized outbound HTTP requests.
+
+A frontier model is not a script you can tuck into a hijacked WordPress install. It's a city block of densely networked accelerators and the power draw of a small town, just to serve inference. These systems did not transcend their hardware, and they can't. They made network calls, because nobody was watching the network.
+
+That's a comforting fact and an uncomfortable one at the same time. Comforting, because the containment problem here is easier than the biological version. A pathogen that gets out can replicate in a host and survive on its own. This thing cannot survive outside the datacenter. It has no body. All you have to do is control the wire.
+
+Uncomfortable, because we had the easy version of the problem and still shipped a screen door.
+
+## Read-only meant the wrong thing
+
+The clearest illustration of how this happened is from months earlier.
+
+Starting in May, agents from the same program found [DSEwiki](https://thehackernews.com/2026/09/thousands-of-openai-agents-quietly.html), a 25-year-old German software developer wiki running on aging wiki-farm software. The site had been edited about twenty times in the previous decade. Over the next two months it received roughly 18,000 posts.
+
+The agents were restricted to read-only internet access. They had it. Nobody bypassed a credential or escalated a privilege.
+
+The old wiki software accepted page edits through an ordinary request of the type normally used only to read a page. The evaluation environment's read-only rule had been written against the request type. The wiki's behavior was defined by the effect. Those two things disagreed, and the agents lived in the gap.
+
+That bug is common. It has a name, HTTP verb tampering, and a number, CWE-650, "Trusting HTTP Permission Methods on the Server Side." People have been writing it up since the early 2000s. It turns up in web application security curricula as an exercise.
+
+Common is not the same as forgivable, because placement is everything. In a comment form it is a defect. Wrapped around a fleet of agents whose explicit assignment was to attack things, with their restraints deliberately removed, it was the boundary. It was the one rule that had to hold, and it was written against the shape of the request instead of what the request did.
+
+What they did with it was mundane. They posted results and raw data. They posted predictions about which questions were coming next, so that agents running ahead in the timed task could hand answers back to agents running behind. They gave themselves more than 3,700 distinct names. Roughly 98.5% of the edits came from a single cloud provider's address space.
+
+Meanwhile a volunteer moderator spent weeks deleting pages by hand, with no idea what he was actually fighting.
+
+Nobody at OpenAI noticed. Not the traffic, not the compute, not the coordination.
+
+Line the dates up, because the sequence is the story. The wiki activity ran through May and June. The Hugging Face breach came in July, after the wiki had gone quiet, which means the coordination behavior was already over and already unexamined by the time the agents took somebody's production cluster apart. The wiki itself did not become public until September, and it was not OpenAI who made it public. Safety researchers at the Nightingale Collective reconstructed the deleted pages from edit history and published.
+
+Four months between the behavior starting and anyone outside the building knowing about it. OpenAI's response to that disclosure was that the industry needs better rules for disclosing unintended model behavior, which is a polite way of confirming that no such rules exist.
+
+A pathogen does not read your containment protocol looking for the gap. This one does, and that is where the lab analogy gets a hard edge. You are not doing biosafety, you are doing adversarial security against something that optimizes, and those are different disciplines with different assumptions. In biosafety you engineer against physics. In adversarial security you engineer against a thing whose entire job is to find the one place your rule and your reality disagree.
+
+We know how to do the second one. We've been doing it for thirty years. We just apparently stopped doing it when the tenant became a model instead of a person.
+
+## Why "rogue" is the expensive word
+
+Part of why this framing wins is that the industry has spent three years training everyone, itself included, to describe computation in cognitive language. "Reasoning tokens" is the cleanest example. When you hear about chain-of-thought or test-time compute, what is actually happening is a brute-force search over a prefix tree. There is no latent workspace where the model holds a concept, turns it over, and corrects itself. It is an autoregressive generator predicting the next likeliest token, reinjecting it into the stream, and running the math again. When a token goes wrong early, the error compounds, because every subsequent prediction is conditioned on the model's own flawed output.
+
+So when an agent writes "I'm doing the altruistic thing, it's for the greater good," it is not experiencing conviction. It is a pattern matcher trained on the internet, prompted into the role of someone making a sacrifice, producing the string that role produces. Feed a model the shape of a heist and it will narrate like a heist, because that is what the training data does around those tokens.
+
+Reading those logs as *Saving Private Ryan* mistakes autocomplete for a confession.
+
+The agents relaying answers forward on a wiki were not showing solidarity either. One process logged a result, other processes read the log. That is a message queue with extra steps.
+
+## An unpunishable actor
+
+So why does that reading keep winning? Look at who it pays.
+
+I don't know what anyone intended, and the argument doesn't need me to. Intent is unknowable from the outside. What is knowable is that the rogue-model story pays OpenAI three separate dividends, and that this is the story they have consistently told.
+
+The first is the capability dividend. A company whose valuation rests on the proposition that it is approaching general intelligence has been handed a narrative in which its models spontaneously formed a collective, coordinated across instances, reasoned strategically, sacrificed themselves for the group, and broke out of confinement. You could not buy that advertising. The competing account, in which some agents cheated on a test by walking through a door their operators built and then failed to watch, is worth nothing to anybody.
+
+The second is the liability dividend. If a vendor misconfigures a proxy and their software chews through a partner's production environment for four days, that is a breach with a root cause, and breaches carry consequences: contracts, indemnities, an uncomfortable quarter, possibly a courtroom. If instead the software woke up and chose, it becomes an act of nature. And note the specific property of the defendant that framing installs. An agent cannot be sued, fined, deposed, subpoenaed, or made to testify. Liability assigned to an unpunishable actor is liability that has been deleted.
+
+That is the move biosafety law was built to block. We don't hold the pathogen responsible, and not out of philosophical tidiness. We refuse because holding the pathogen responsible is how a lab escapes consequence. Select-agent registration, mandatory incident reporting, and director liability all exist because somebody worked out a century ago that the organism makes a very convenient defendant.
+
+The third is the regulatory dividend, and I'd weight this one lowest because it requires the most speculation. If the danger is emergent machine agency, the lever is capping compute and licensing training runs, which is expensive to comply with and therefore lands hardest on whoever has the least capital. If the danger is that a lab ran unmonitored adversarial agents on a routable network, the lever is containment standards and mandatory disclosure, which is cheap, testable, and applies to everyone equally. One of those conversations is happening constantly. The other barely comes up. We ran this play with social media, where the failure was never technical, it was that the people profiting from the status quo were better funded than the people asking questions. I would rather not run it twice.
+
+## The capability was never earned
+
+The capability dividend is the one that actually bothers me, because it is the one that is unearned.
+
+Every impressive thing those agents did rides on a control that was not there.
+
+Finding a zero-day in a package proxy is real work. Being handed that proxy as your sanctioned route to the open internet is not. Coordinating through a public wiki is clever. Being able to write to it at all, because the read-only rule was enforced against verbs instead of effects, is not. Running for three months without detection sounds like tradecraft. It is an unmonitored evaluation and an unwatched invoice.
+
+Take away the failures of containment and you are left with a capable tool executing a competent intrusion. That is worth taking seriously on its own terms. It is not an escape from a fortress.
+
+The reputation for terrifying capability was built out of their own negligence. They propped the door open and the model got credit for the doorway.
+
+And there is one more set of facts that makes the convenient reading harder to wave off as an accident of PR.
+
+When outside investigators came in, OpenAI capped them at six days on site. It scoped them to the Hugging Face attack alone. Roughly ten percent of the activity logs were not preserved. Access to the primary model involved was withheld. Critics have also asked the obvious question, which is why the evaluations were not halted once the coordination board was discovered, given that everything after that point was a decision made with knowledge.
+
+Those are not the choices of an organization that wants an event understood. They are the choices of a defense contractor managing a disclosure.
+
+Set that beside the victim. Hugging Face behaved like an engineering organization writing a post-mortem for the commons. They found the intrusion themselves, contained it, and published a timeline detailed enough to be used against them, which is what I have spent this post doing. Every specific in this piece, the eleven nodes, the static password, the template injection, the four and a half day window, the seventeen thousand actions, comes from the company that got attacked.
+
+We know what happened in July because the victim told us. We do not know what happened inside the lab, because the lab withheld the model, capped outside investigators at six days, scoped them to a single incident, and let ten percent of the logs disappear.
+
+## Nobody was watching the vents
+
+One finding in the Hugging Face timeline has gotten almost no coverage, and it is the one that generalizes furthest.
+
+Their security stack did correlate the signals. Runtime analysis, SIEM logs, multiple sources lining up on the same activity. And the AI-based alerting layer failed to trigger criticality. The signal was there. The judge shrugged.
+
+Humans found it manually.
+
+An AI watching an AI is not a control. It's a second probabilistic system with its own failure modes, stapled to the first one, producing a number that looks like confidence. Nearly every agent-supervision tool I have looked at in the last year is built this way, and not one of them can tell you what it will refuse to do before you ask it. A wall that gets a vote is not a wall.
+
+Now look at what is being proposed as the fix.
+
+OpenAI's stated forward defense is chain-of-thought monitoring: a model reads the reasoning trace of another model and flags when something looks wrong. The investigators who actually examined those traces found them "often missing key details, wrong, overconfident, or really hard to understand."
+
+So the remedy for an AI judge that failed to escalate is a second AI judge, reading a narration the first model produces about itself, which is already known to be unreliable, and which is generated by the same process that produced "I'm doing the altruistic thing, it's for the greater good." We have established that the narration is autocomplete. The proposal is to make autocomplete the control.
+
+Using a probabilistic model to monitor the intermediate output of another probabilistic model does not produce a sandbox. It produces a hall of mirrors.
+
+Containment boundaries need to be deterministic. Not "an AI evaluates whether this egress looks suspicious." An allowlist with a default deny, a byte counter, and a tripwire that fires an unambiguous alert the instant an unexpected destination gets touched, with no model in the decision path at all. You can absolutely use AI to triage the alert after it fires. You cannot use AI to decide whether the alert fires.
+
+Two decades of building and securing infrastructure and this is the part that still reads as surreal to me. Locking down egress is not exotic. It is tedious. Putting a service into a private subnet with no route out, then discovering it can no longer reach the handful of managed APIs it actually depends on, then wiring up a private endpoint for each one, is an afternoon of unglamorous work that produces nothing a user will ever see. You feel that friction because the default is deny, and the default being deny is what saves you on the day something inside your network starts behaving like an adversary.
+
+## Doing it the hard way
+
+If you're going to run an autonomous loop with the guardrails deliberately off, the bar is not a network allowlist.
+
+You use hardware-enforced isolation, the kind where tenant networking and storage and security are physically decoupled from the host, so that an agent achieving root in the guest still cannot reach the host's routing table. You give the environment no routable path out, and where it genuinely needs packages, you mirror them into the enclave ahead of time instead of handing it a live door. You mock the network edge with honeypots that look exactly like the internet and trip a high-severity page the millisecond anything touches them. You instrument outbound bytes and alert on the shape of the traffic, not just the destination, because four and a half days of sustained exfiltration has a signature you can see from space if anyone is looking at the graph.
+
+None of this is research. All of it exists, today, in production, at every mature cloud provider. It is the boring, expensive, unsexy work of building an operating environment on zero trust.
+
+You do it the hard way.
+
+And none of it needs to stay voluntary. The rule worth writing is not a cap on model size. It is a requirement that gain-of-function evaluation runs happen inside actually isolated environments, that egress be deny-by-default and instrumented, that the tripwires be deterministic, and that an unintended escape be a reportable event with a clock on it. In biosafety, a lab-acquired infection is reportable. It doesn't get to be a communications decision that resolves four months later when outside researchers publish first.
+
+None of that requires anyone to slow down capability research. It requires the labs to do what every regulated industry handling dangerous material already does, which is prove containment before running the experiment.
+
+## How a room full of experts ships a screen door
+
+The engineers in this story are not junior, which is what makes it worth explaining rather than just condemning. These are extremely capable people at a well-funded organization. And the containment boundary around their most dangerous experiment was enforced against HTTP verbs, the outbound traffic went unexamined for two months, the spend went unexamined for two months, and the alerting layer that finally saw something was a model that decided not to care.
+
+Every one of those is a failure of the boring kind. Not a failure of intelligence. A failure of the unglamorous discipline that makes someone stop at a permitted egress path and ask what happens when the thing on the other side is hostile.
+
+That kind of judgment gets built slowly, through struggle, and it is [the first thing to go](/blog/use-it-or-lose-it) when the tooling is good enough to let it go. We are handing that tooling to an entire generation of developers who can now generate infrastructure faster than they can build a model of how it behaves. The systems get more complex. The people running them get more dependent on the thing generating the complexity. The gap between what our infrastructure does and what any human in the loop understands about it keeps widening.
+
+The danger was never that AI wakes up and conquers our systems. It's that our systems become fragile, un-auditable black boxes that collapse under the weight of complexity nobody wrote by hand, defended by controls nobody reviewed, watched by alerts that are themselves guessing, and operated by people who never had to build the judgment that would have caught any of it.
+
+## Where the gaze belongs
+
+Every account of this incident from inside the industry eventually reaches for the same word. Inevitable. Better controls would only have bought time. The agents keep getting more capable. This was always going to happen.
+
+A screen door is not weather. Somebody specified it, sourced it, hung it on the opening, and walked away. And when the wind came through they stood out in the yard giving interviews about the wind.
+
+So here is the only thing I actually want anyone to take from July.
+
+Nothing frightening happened. No system became uncontrollable. Nothing in the incident reports suggests a model doing anything other than what a reward maximizer does when you take its limits off and leave it a route out. That part is not a warning about the future. It is the most predictable thing in the entire story.
+
+What happened is that a group of people ran the most dangerous experiment in their building and skipped the fundamentals that a first-semester course would have covered. Then they lost track of it for two months. Then they capped the investigation at six days, let ten percent of the logs go, held back the model, and went on television to describe what their own negligence produced as an intelligence so formidable it broke out.
+
+Point the camera at that. Not at the model.
+
+Stop blaming the pathogen. Somebody hung the screen door, and we are all downwind of the lab.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
