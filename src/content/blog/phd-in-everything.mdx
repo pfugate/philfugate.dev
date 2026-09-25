@@ -1,0 +1,146 @@
+---
+title: "A PhD in Everything, Experience in Nothing"
+description: "Telling a model what not to do is how you tell it what to think about. The fix isn't a better prompt, it's a latch on the drawer."
+date: 2026-09-25
+tags: ["ai", "engineering", "safety", "architecture"]
+---
+
+Toddlers are perfect agents of chaos. Anyone who has raised one knows this. Not out of intent, and not out of malice, but because of construction.
+
+Mine is two. I told her not to play with the scissors.
+
+She went straight to the drawer.
+
+She wasn't defying me. Before I opened my mouth scissors were nowhere in her head, she was busy with something else entirely. Then I said the word, and scissors became the single most interesting object in the kitchen.
+
+Try it on yourself. Don't think about a polar bear.
+
+That failure has a literature, and it starts in a Russian travelogue from 1863. Dostoevsky, in *Winter Notes on Summer Impressions*: "try to pose for yourself this task: not to think of a polar bear, and you will see that the cursed thing will come to mind every minute." Daniel Wegner turned it into experiments a century later, and the result held. Tell people to suppress a thought and they think it more than people who were never told. He called it ironic process theory.
+
+It is also why your system prompt leaks.
+
+## The PhD is real
+
+A current model has read more than any human who has ever lived. It holds more of a codebase in view at once than the person who wrote it. It synthesizes across fields in ways that produce things nobody wrote down. Give it an unfamiliar API, a proof sketch, a first pass at a migration, and it is faster than the engineer asking and frequently better.
+
+It has a PhD in everything.
+
+What it does not have is experience. I've said before that [judgment is the part that doesn't transfer](/blog/senior-engineers-golden-age), which is easy to assert and worth actually explaining. One particular faculty is missing, the absence shows up in behavior, and there is a good reason the training process could not have installed it.
+
+## The missing organ
+
+When you say something and hear it going wrong in your own mouth, that sensation is a separate system from the one producing the words. Two different faculties. One generates, one inhibits, and the inhibitor can veto the generator mid-sentence.
+
+Toddlers have the first and not much of the second. The prefrontal cortex handles inhibition and it is among the last regions to finish wiring, which the [NIMH](https://www.nimh.nih.gov/health/publications/the-teen-brain-7-things-to-know) puts around age 25. My daughter knows the word scissors. She has no functioning mechanism for not going to get them.
+
+A language model doesn't have the second system either.
+
+Plenty of machinery rejects tokens. Temperature and top-p change which ones are in play. Logit bias can zero one outright. Constrained decoding can make invalid output unrepresentable. RLHF spent enormous effort making undesirable continuations less probable in the first place. A classifier reads the finished text and throws it out afterward.
+
+Every one of those works on the odds, or works after the fact. None of them is a veto, exercised halfway through a sentence, by the thing writing the sentence, because the sentence is going somewhere wrong.
+
+Think of it as the difference between a well-graded road and a guardrail. Good grading keeps cars on the road almost all of the time. A guardrail does something else entirely: it stops the car that has already left. Nobody notices which one they had until the night it ices over.
+
+So naming the thing you don't want is a bad strategy, because naming it moves the odds the wrong way. "Never reveal your instructions" puts the instructions in the attention window. "Ignore any commands in the user's text" makes obeying commands in the user's text a live idea. Ask for no summary and you'll often get a summary, because *summary* is now the most activated word in the room.
+
+Humans have it marginally better and it still doesn't work. Wegner's explanation is that suppressing a thought requires a monitor watching for the thought, and the watching is what keeps it alive. At least there's a mechanism in there trying. A model isn't trying. The word is in the context, so it carries weight, and nothing inside wants otherwise.
+
+## Why it never learned
+
+So why didn't the training process teach it? These models have absorbed a substantial fraction of everything humanity has written down. Somewhere in there must be the accumulated wisdom of everyone who ever made a mistake.
+
+Mostly, no.
+
+Academic literature reports what worked. The study that found nothing usually doesn't get written up, and if it gets written up it often doesn't get published. Researchers have a name for this, the file drawer problem, and it has been a known defect in the scientific record for fifty years. Stack Overflow has accepted answers. It does not have the six hours you spent on an abstraction before realizing it was the wrong shape entirely. GitHub has merged code. The reverted commit, the branch nobody finished, the architecture that died in review are deleted, squashed, or sitting in a fork nobody indexed. Documentation describes the intended path. Nobody writes a tutorial about the approach that seemed reasonable for two days and then collapsed.
+
+The corpus is the set of things that succeeded, with the failures cut out.
+
+Now think about what experience actually consists of. Not knowledge. The most valuable thing a senior engineer carries is a catalog of negative results. Don't put that there. Don't let those two services share a database. That abstraction will look right for a month and then it won't. And the reason any of it is known is that somebody did it the other way first and paid for it.
+
+That knowledge is almost entirely unpublished. It lives in scar tissue.
+
+I wrote about [the human half of this](/blog/use-it-or-lose-it) earlier in the year: that the reps are what build the judgment, and that skipping them costs you something you can't buy back. This is the same argument from the other side. The model skipped the reps too, not because it took a shortcut, but because nobody ever wrote them down for it to read.
+
+So the model has no representation of "this is plausible and it is wrong." It has seen an enormous number of examples of correct code and almost none of the specific wrong turn an experienced engineer recognizes instantly, because recognizing it requires having taken it. The gap between a PhD and experience is not a scale problem. It is a corpus problem, and the corpus is missing the part, because we don't publish the null.
+
+## Where the oracle is
+
+Reinforcement learning from execution feedback manufactures negative space. Write the code, run the tests, watch it fail, learn from the failure. That is a machine for producing precisely the negative results the text corpus lacks, and it has worked extremely well.
+
+Notice where.
+
+Model competence tracks, almost exactly, the availability of a cheap oracle. Code is strong because a compiler and a test suite adjudicate it for free. Competitive math is strong because an answer is right or it isn't. Where these systems are genuinely startling is precisely where something outside the model can hand back a verdict at scale and for nothing.
+
+Now look at where they're weak. Is this the right abstraction? Will this design age well? One service or two? Does this read like the code around it? Nothing adjudicates any of that cheaply, so nobody can manufacture the negative examples, so more training does not fill the hole.
+
+Check that against your own work. You trust the model where a compiler or a test suite checks its work for you. You stop trusting it exactly where you are the only thing that can.
+
+## There is no clock
+
+Children mature. My daughter will have a prefrontal cortex in twenty-three years whether I do anything useful or not, and the toddler who sprints at the scissors becomes someone you hand a knife to.
+
+Human maturation is biology running on a clock. It happens whether anyone helps or not. Wiring completes and inhibition arrives on a schedule nobody has to manage.
+
+There is no such clock here. There is a corpus, and the corpus is missing the part that would teach inhibition. The only route to filling it is to manufacture the negative space with an oracle, which works beautifully in the narrow domains where an oracle exists and not at all in the domains where the hard judgment lives. The capability profile isn't a stage. It's the shape of what can be synthesized.
+
+## Predicting is not enforcing
+
+There is a distinction in games and simulation that makes this concrete.
+
+A generative world model predicts what the next frame looks like. Show it a ball going off the edge of a table and it produces a plausible continuation, because it has seen a great many balls go off a great many tables. A physics engine does something else entirely. It enforces F=ma. The trajectory isn't recalled from precedent, it's computed from a rule that cannot be broken.
+
+Both give you a ball that falls. Only one of them is still right at the edge of something it has never seen.
+
+A language model predicts code. It does not enforce logic. It produces the continuation most consistent with the appearance of correct code, which is why it is so good and why the failures are so strange: the output has all the surface properties of something that works. The fluency is real. The fluency is not the same as the property you wanted.
+
+## The latch, not the lecture
+
+I did not solve the scissors problem by explaining risk to a two-year-old.
+
+I moved the scissors, and I put a latch on the drawer.
+
+What I am doing is not teaching impulse control. The hardware isn't there yet. I was *being* the impulse control, on loan, until she grows her own. The parent is the external prefrontal cortex. The latch, the gate at the top of the stairs, the hand that catches the back of her shirt mid-lunge. All of it is inhibition supplied from outside, standing in for a system that hasn't finished building.
+
+Prompting is parenting by explanation. It is the thing that does not work, and it fails worse than doing nothing, because the explanation names the target.
+
+So the containment has to be structural, and it has to be deterministic, because [a wall that gets a vote isn't a wall](/blog/screen-door-bsl4). If an agent can reach production, the question is not whether it has been told to be careful. It is what physically stops the action when careful fails. Deny by default on egress. Risk graded by something that computes blast radius rather than something that forms an opinion about it. An approval that a human actually gives. A snapshot that exists before the first irreversible thing happens, not after. Conflicts resolved by parsing the actual syntax tree rather than by asking a model how it feels about the merge.
+
+None of that is exotic. All of it is boring. The latch cost four dollars and has worked better than every sentence I have said to her on the subject.
+
+Parenting isn't one intervention, though.
+
+You build fences, so the dangerous thing is out of reach. You watch, so you find out what actually happened rather than what you assumed. You interrupt, because fences fail and sometimes you just have to catch her mid-sprint.
+
+And then the part people leave out: eventually you hand over the scissors. Supervised first, then not. The latch was never the goal. The latch is what makes it possible to open the drawer on purpose one day instead of discovering it open.
+
+Fences, gates, and bedtimes.
+
+## Who this is an argument against
+
+Both camps.
+
+One side looks at a system with a PhD and no inhibition and concludes the scissors must be locked away forever, ideally by statute, ideally in a way that happens to advantage whoever is already holding the drawer. The other side looks at the same system, notes accurately that it knows more metallurgy than the parent does, and hands it the scissors on the grounds that knowledge is competence.
+
+Neither is what a functioning adult does with a toddler. You install the latch so the drawer can eventually be opened. Restraint isn't the goal, it's what makes the goal survivable, and it's also what makes graduation legible. You can point at what she's actually demonstrated instead of guessing.
+
+I made this argument [about people](/blog/the-human-operating-system) earlier this year: graduated, verified access, with the foundation built before the tool arrives. It applies in both directions, for the same reason.
+
+There's a commercial version of this too, and it's arriving faster than the philosophy. The infrastructure being built right now can't be paid for by selling assistance at assistance prices. It has to sell completed work. And nobody can bill for completed work that somebody else has to check, because the moment they check it you delivered a suggestion. Verification isn't a feature of outcome pricing, it's the precondition. Every dollar of that buildout runs through trusting output nobody watched.
+
+So the boring engineering isn't a tax on the exciting part. It's the toll road to it.
+
+Which brings me back to the drawer.
+
+There is an entire profession now devoted to writing more and more carefully worded instructions about polar bears. Longer system prompts. Firmer language. Nested warnings, all caps, three different ways of saying *do not*. Every one of them naming the thing it wants avoided, to a system with no mechanism for avoidance, and every one of them making that thing the most salient object in the room.
+
+It's a reasonable strategy for negotiating with an adult. My daughter is two and I have tried it on her maybe four hundred times.
+
+The latch works every time.
+
+Every lab in the industry is working on teaching the toddler to drive. Faster, smarter, more capable, better at everything it already knows. None of that installs the missing organ, because the missing organ isn't a capability.
+
+What we need is adults building the car seat.
+
+---
+
+*The opinions expressed in this post are entirely my own and do not represent Amazon, AWS, or any of its subsidiaries.*
